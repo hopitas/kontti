@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 using kontti.Model;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
@@ -43,26 +44,52 @@ namespace kontti
             Random rand = new Random();
             data.timecreated = DateTime.Now.ToLocalTime();
             data.randomnumber = rand.NextDouble();
+            DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 
-            sendData(data);
+            string jsonString = convertData(data);
+
+            sendData(deviceClient, jsonString);
+
+            receiveData(deviceClient);
+
         }
 
-        //send data to azure
-        private void sendData(Data data)
+        private string convertData(Data data)
         {
             string jsonString = JsonConvert.SerializeObject(data);
-
             Debug.WriteLine(jsonString);
-            SendDeviceToCloudMessagesAsync(connectionString, jsonString);
+            return jsonString;
         }
 
         //send data to azure
-        static async void SendDeviceToCloudMessagesAsync(string connectionString, string jsonString)
+        static async void sendData(DeviceClient deviceClient, string jsonString)
         {
-            DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
-            var str = jsonString;
-            var message = new Message(Encoding.ASCII.GetBytes(str));
+            var message = new Message(Encoding.ASCII.GetBytes(jsonString));
             await deviceClient.SendEventAsync(message);
+        }
+
+        //receive data from azure
+        public async void receiveData(DeviceClient deviceClient)
+        {
+            try
+            {
+                var receivedMessage = await deviceClient.ReceiveAsync();
+
+                if (receivedMessage != null)
+                {
+                    var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
+                    deviceClient.CompleteAsync(receivedMessage);
+                    Debug.WriteLine(messageData);
+                }
+                else
+                {
+
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Exception when receiving message:" + e.Message);
+            }
         }
 
     }
