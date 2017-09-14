@@ -29,7 +29,7 @@ namespace kontti
             };
 
             //Azure connection string
-            connectionString = "HostName=tthub.azure-devices.net;DeviceId=kontti;SharedAccessKey=s4S7sDjCRIiPf03gX2axgof8ZSOz2qgL9OeEmI7aS8o=";
+            connectionString = "";
 
             //timer for reading commands every 1sec
             readvalTimer = new DispatcherTimer();

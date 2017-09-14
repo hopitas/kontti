@@ -11,14 +11,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SerialExample", "SerialExam
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|ARM = Release|ARM
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|ARM.ActiveCfg = Debug|ARM
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|ARM.Build.0 = Debug|ARM
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|ARM.Deploy.0 = Debug|ARM
@@ -28,6 +31,7 @@ Global
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|x86.ActiveCfg = Debug|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|x86.Build.0 = Debug|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Debug|x86.Deploy.0 = Debug|x86
+		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|Any CPU.ActiveCfg = Release|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|ARM.ActiveCfg = Release|ARM
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|ARM.Build.0 = Release|ARM
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|ARM.Deploy.0 = Release|ARM
@@ -37,6 +41,7 @@ Global
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|x86.ActiveCfg = Release|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|x86.Build.0 = Release|x86
 		{569842F0-8E2B-44E0-879D-DA11763E8C72}.Release|x86.Deploy.0 = Release|x86
+		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|ARM.ActiveCfg = Debug|ARM
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|ARM.Build.0 = Debug|ARM
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|ARM.Deploy.0 = Debug|ARM
@@ -46,6 +51,7 @@ Global
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|x86.ActiveCfg = Debug|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|x86.Build.0 = Debug|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Debug|x86.Deploy.0 = Debug|x86
+		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|Any CPU.ActiveCfg = Release|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|ARM.ActiveCfg = Release|ARM
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|ARM.Build.0 = Release|ARM
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|ARM.Deploy.0 = Release|ARM
@@ -55,10 +61,12 @@ Global
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|x86.ActiveCfg = Release|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|x86.Build.0 = Release|x86
 		{3E2C243A-B3CC-4E9C-A5DF-544C28771EAA}.Release|x86.Deploy.0 = Release|x86
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|ARM.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x64.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|ARM.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x64.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
