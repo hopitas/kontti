@@ -8,10 +8,20 @@ using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace SerialSample
 {
-    public sealed partial class MainPage : Page
+    class Data
+    {
+        public double Temperature { get; set; }
+    public double Humidity { get; set; }
+
+
+}
+
+
+public sealed partial class MainPage : Page
     {
 
         private SerialDevice serialPort = null;
@@ -104,15 +114,16 @@ namespace SerialSample
 
             try
             {
-                var bytesRecieved = await dataReaderObject.LoadAsync(15);
+                await dataReaderObject.LoadAsync(256);
+                var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
 
-                if (bytesRecieved > 0)
-                {
+                Data data = new Data();
 
-                    //    data.Text = dataReaderObject.ReadString(bytesRecieved).Trim();
-                    Debug.WriteLine(dataReaderObject.ReadString(bytesRecieved).Trim());
-                }
 
+                data = Newtonsoft.Json.JsonConvert.DeserializeObject<Data>(receivedStrings);
+
+                Debug.WriteLine(receivedStrings.Trim());
+                Debug.WriteLine("asdf");
             }
             catch (Exception ex)
             {
