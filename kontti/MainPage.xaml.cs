@@ -50,8 +50,8 @@ namespace kontti
                 timecreated = DateTime.Now.ToLocalTime()
             };
 
-            //Azure connection string
-            connectionString = "";
+            //Azure connection string, tätä ei sais päästää githubii
+            connectionString = "HostName=konttihub.azure-devices.net;DeviceId=konttipi;SharedAccessKey=3bn/JmXxSM8aabzCdGcnpsVA3zdrtrygqy0jCmaz0uA=";
 
             //timer for reading commands every 1sec
             readvalTimer = new DispatcherTimer();
