@@ -19,8 +19,6 @@ namespace kontti
     {
         public double Temperature { get; set; }
         public double Humidity { get; set; }
-
-
     }
 
     public sealed partial class MainPage : Page
@@ -33,12 +31,7 @@ namespace kontti
         private Data data;
         private byte[] WriteBuf = new byte[1];
 
-        public uint BytesReceived { get; }
-
-
         public MainPage()
-
-
         {
 
             this.InitializeComponent();
@@ -51,7 +44,7 @@ namespace kontti
             };
 
             //Azure connection string, tätä ei sais päästää githubii
-            connectionString = "HostName=konttihub.azure-devices.net;DeviceId=konttipi;SharedAccessKey=3bn/JmXxSM8aabzCdGcnpsVA3zdrtrygqy0jCmaz0uA=";
+            connectionString = "";
 
             //timer for reading commands every 1sec
             readvalTimer = new DispatcherTimer();
@@ -122,14 +115,8 @@ namespace kontti
             }
         }
 
-
-
-
         private async Task<ArduinoData> serialRead()
         {
-
-            //    DataReader dataReaderObject = null;
-            //    DataWriter dataWriterObject = null;
 
             dataReaderObject = new DataReader(serialPort.InputStream);
             dataWriterObject = new DataWriter(serialPort.OutputStream);
@@ -138,12 +125,9 @@ namespace kontti
             try
             {
                 Task<UInt32> storeAsyncTask1;
-
                 WriteBuf[0] = 1;
                 dataWriterObject.WriteBytes(WriteBuf);
-
                 storeAsyncTask1 = dataWriterObject.StoreAsync().AsTask();
-
                 UInt32 bytesWritten1 = await storeAsyncTask1;
 
                 // Cleanup once complete
@@ -196,8 +180,6 @@ namespace kontti
                 var selectedPort = dis.Where(t => t.Name == "Genuino Uno").First();
 
                 serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
-
-
                 serialPort.ReadTimeout = TimeSpan.FromMilliseconds(1000);
                 serialPort.BaudRate = 115200;
                 serialPort.Parity = SerialParity.None;
@@ -211,6 +193,5 @@ namespace kontti
                 Debug.WriteLine("OOps, Something went wrong! \n" + ex.Message);
             }
         }
-
     }
 }

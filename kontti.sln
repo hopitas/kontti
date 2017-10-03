@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SerialExample", "SerialExam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspiResponse", "RaspiResponse\RaspiResponse.csproj", "{7495E667-06A2-4470-9C83-23CF14478B23}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoTests", "ArduinoTests\ArduinoTests.vcxproj", "{CD8D149C-9366-48D0-8441-06D2C043433B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,16 @@ Global
 		{7495E667-06A2-4470-9C83-23CF14478B23}.Release|x64.Build.0 = Release|Any CPU
 		{7495E667-06A2-4470-9C83-23CF14478B23}.Release|x86.ActiveCfg = Release|Any CPU
 		{7495E667-06A2-4470-9C83-23CF14478B23}.Release|x86.Build.0 = Release|Any CPU
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Debug|ARM.ActiveCfg = Debug|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Debug|x64.ActiveCfg = Debug|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Debug|x86.ActiveCfg = Debug|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Debug|x86.Build.0 = Debug|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Release|Any CPU.ActiveCfg = Release|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Release|ARM.ActiveCfg = Release|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Release|x64.ActiveCfg = Release|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Release|x86.ActiveCfg = Release|Win32
+		{CD8D149C-9366-48D0-8441-06D2C043433B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
