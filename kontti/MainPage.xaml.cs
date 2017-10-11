@@ -52,20 +52,23 @@ namespace kontti
             readvalTimer.Tick += readvalTimer_TickAsync;
             readvalTimer.Start();
 
-            ListAvailablePorts();
+      //      ListAvailablePorts();
         }
 
         //This would read the values from sensors, now generates random number
         private async void readvalTimer_TickAsync(object sender, object e)
         {
-            ArduinoData arduinodata = new ArduinoData();
+          //  ArduinoData arduinodata = new ArduinoData();
 
             data.timecreated = DateTime.Now;
 
-            arduinodata = await serialRead();
+            //    arduinodata = await serialRead();
 
-            data.Temperature = arduinodata.Temperature;
-            data.Humidity = arduinodata.Humidity;
+            Random random = new Random();
+            
+
+            data.Temperature = random.NextDouble(); //arduinodata.Temperature;
+            data.Humidity = random.NextDouble();//arduinodata.Humidity;
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 

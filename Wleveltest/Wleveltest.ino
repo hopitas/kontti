@@ -1,6 +1,12 @@
+/*
+ Name:		Wleveltest.ino
+ Created:	10/10/2017 6:59:24 PM
+ Author:	tero.toivola
+*/
+
 
 //define analog inputs to which we have connected our sensors
-byte waterLevel = 5; // Water level sensor pin
+byte waterLevel = 6; // Water level sensor pin
 
 short sensor_val = 0;    // water level sensor reading
 
@@ -18,3 +24,4 @@ void loop() {
 	delay(1000); // wait 1s
 
 }
+
