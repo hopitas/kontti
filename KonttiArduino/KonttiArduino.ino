@@ -26,7 +26,7 @@ short sensor_wLevelLimit = 1;								// Upper container water level sensor readi
 short sensor_wLevelEmpty = 0;								// Lower container wlevel
 unsigned long previousWaterMillis = 0;
 unsigned long previousDHTMillis = 0;
-long defaultwateringinterval = 1000 * 10;					// interval at which to blink (milliseconds) 5 minute...
+long defaultwateringinterval = 1000 * 60 * 60 * 6;					// Watering interval (milliseconds) 10 minutes...
 long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
 
 // the setup function runs once when you press reset or power the board

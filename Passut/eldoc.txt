@@ -1,0 +1,10 @@
+pinnankorekusanturin pinnijärjsestys rs-232 liitin:
+
+1 vihreä
+2 punainen
+3 sininen
+
+liitinjärjestys
+
+5 pinni onko alaämpäri tyhjä
+6 pinni pinnankorkeuspinni

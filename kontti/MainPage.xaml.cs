@@ -11,6 +11,7 @@ using Windows.Storage.Streams;
 using Windows.Devices.SerialCommunication;
 using Windows.Devices.Enumeration;
 using System.Linq;
+using System.Threading;
 
 namespace kontti
 {
@@ -46,27 +47,47 @@ namespace kontti
             //Azure connection string, tätä ei sais päästää githubii
             connectionString = "";
 
+            ListAvailablePorts();
+            //try
+            //{
+            //    Thread.Sleep(30000);
+            //    sendReceive();
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine("OOps, Something went wrong! \n" + ex.Message);
+            //}
+
+
             //timer for reading commands every 1sec
             readvalTimer = new DispatcherTimer();
             readvalTimer.Interval = TimeSpan.FromMinutes(10);
             readvalTimer.Tick += readvalTimer_TickAsync;
             readvalTimer.Start();
 
-            ListAvailablePorts();
+            //  Thread.Sleep(30000);  //Wait for getting com port initialized
+
+
         }
+
+
+
 
         //This would read the values from sensors, now generates random number
         private async void readvalTimer_TickAsync(object sender, object e)
+        {
+            sendReceive();
+        }
+
+        private async void sendReceive()
         {
             ArduinoData arduinodata = new ArduinoData();
 
             data.timecreated = DateTime.Now;
 
-                arduinodata = await serialRead();
+            arduinodata = await serialRead();
 
-            Random random = new Random();
-
-
+            //Random random = new Random();
             //data.Temperature = random.NextDouble(); //arduinodata.Temperature;
             //data.Humidity = random.NextDouble();//arduinodata.Humidity;
 
@@ -80,8 +101,8 @@ namespace kontti
             sendData(deviceClient, jsonString);
 
             receiveData(deviceClient);
-
         }
+
 
         private string convertData(Data data)
         {
