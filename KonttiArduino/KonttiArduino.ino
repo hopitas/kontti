@@ -16,18 +16,25 @@ char messagechar[11];
 int number = 0;
 float t1 = 0;
 float h1 = 0;
+int readamount = 0;
 long randNumber;
 StaticJsonBuffer<200> jsonBuffer;
 JsonObject& json = jsonBuffer.createObject();
 int pump = 3;												// pump pin
+int light = 4;												// light pin
 byte wLevelLimit = 6;										// Upper container max water level 
 byte wLevelEmpty = 5;										// lower container empty
 short sensor_wLevelLimit = 1;								// Upper container water level sensor reading
 short sensor_wLevelEmpty = 0;								// Lower container wlevel
 unsigned long previousWaterMillis = 0;
+unsigned long previousLightMillis = 0;
 unsigned long previousDHTMillis = 0;
-long defaultwateringinterval = 1000 * 60 * 60 * 6;					// Watering interval (milliseconds) 10 minutes...
+long defaultwateringinterval = 1000 * 60 * 60 * 6;			// Watering interval (milliseconds) 6 hours...
 long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
+long defaultlighton = 1000 * 60 * 60 * 16;					// lights on 16h / day
+long defaultlightoff = 1000 * 60 * 60 * 8;					// Lights off 8h / day
+long defaultlightinterval;
+bool defaultlightswitch = true;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -38,10 +45,12 @@ void setup() {
 	dht.begin();
 	randomSeed(analogRead(0));
 	pinMode(pump, OUTPUT);									//pump as output
+	pinMode(light, OUTPUT);									//lights as output
 	pinMode(wLevelLimit, INPUT);							//wlevellimit as input
 	pinMode(wLevelEmpty, INPUT);							//wlevelempty as input
 	digitalWrite(pump, LOW);								// pump off
-
+	digitalWrite(light, HIGH);								// lights on
+	defaultlightinterval = defaultlighton;					// start with lights on 16h
 }
 
 // the loop function runs over and over again until power down or reset
@@ -49,6 +58,40 @@ void loop() {
 	unsigned long currentMillis = millis();
 	watering(currentMillis, defaultwateringinterval);
 	readDHT(currentMillis, defaultdhtreadinginterval);
+	lightTimer(currentMillis, defaultlightinterval);
+}
+
+
+//Lightning default timer
+void lightTimer(unsigned long currentLightMillis, long lightInterval)
+{
+	if (currentLightMillis - previousLightMillis >= lightInterval) {
+		defaultlightswitch = !defaultlightswitch;
+		lightSwitch(defaultlightswitch); //switch lights
+		previousLightMillis = currentLightMillis;
+
+		// switch between on/off interval
+		if (defaultlightinterval == defaultlighton)
+		{
+			defaultlightinterval = defaultlightoff;
+		}
+		else
+		{
+			defaultlightinterval = defaultlighton;
+		}
+	}
+}
+
+void lightSwitch(bool on)
+{
+	if (on == true)
+	{
+		digitalWrite(light, HIGH);
+	}
+	else
+	{
+		digitalWrite(light, LOW);
+	}
 }
 
 //Go through watering cycle
@@ -76,8 +119,9 @@ void watering(unsigned long currentWaterMillis, long wateringInterval) {
 void readDHT(unsigned long currentDHTMillis, long dhtreadinginterval) {
 
 	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
-		h1 = dht.readHumidity();
-		t1 = dht.readTemperature();
+		h1 += dht.readHumidity();
+		t1 += dht.readTemperature();
+		readamount++;
 		previousDHTMillis = currentDHTMillis;
 	}
 }
@@ -92,6 +136,10 @@ void serialEvent()
 		switch (number)
 		{
 		case 1:
+			// Take average
+			t1 = t1 / readamount;
+			h1 = h1 / readamount;
+			readamount = 0;
 			json["temperature"] = t1;
 			json["humidity"] = h1;
 			json.printTo(Serial);

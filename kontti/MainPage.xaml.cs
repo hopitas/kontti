@@ -16,20 +16,15 @@ using System.Threading;
 namespace kontti
 {
 
-    class ArduinoData
-    {
-        public double Temperature { get; set; }
-        public double Humidity { get; set; }
-    }
-
     public sealed partial class MainPage : Page
     {
         string connectionString;
-        private DispatcherTimer readvalTimer;
+        private DispatcherTimer sendToCloudTimer;
+        private DispatcherTimer arduinoTimer;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
         DataWriter dataWriterObject = null;
-        private Data data;
+        private Data envdata;
         private byte[] WriteBuf = new byte[1];
 
         public MainPage()
@@ -37,7 +32,7 @@ namespace kontti
 
             this.InitializeComponent();
 
-            data = new Data
+            envdata = new Data
             {
                 displayname = "KonttiRaspi",
                 organization = "T&T",
@@ -47,43 +42,44 @@ namespace kontti
             //Azure connection string, tätä ei sais päästää githubii
             connectionString = "";
 
+            DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
+
+            //Start waiting for Azure data
+            ReceiveC2dAsync(deviceClient);
+
+            // Find arduino com port
             ListAvailablePorts();
-            //try
-            //{
-            //    Thread.Sleep(30000);
-            //    sendReceive();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine("OOps, Something went wrong! \n" + ex.Message);
-            //}
 
+            //timer for sending sensor data to cloud every 10 minutes
+            sendToCloudTimer = new DispatcherTimer();
+            sendToCloudTimer.Interval = TimeSpan.FromMinutes(10);
+            sendToCloudTimer.Tick += sendToCloudTimer_TickAsync;
+            sendToCloudTimer.Start();
 
-            //timer for reading commands every 1sec
-            readvalTimer = new DispatcherTimer();
-            readvalTimer.Interval = TimeSpan.FromMinutes(10);
-            readvalTimer.Tick += readvalTimer_TickAsync;
-            readvalTimer.Start();
-
-            //  Thread.Sleep(30000);  //Wait for getting com port initialized
-
-
+            ////timer for communicating with Arduino every 10 seconds
+            //arduinoTimer = new DispatcherTimer();
+            //arduinoTimer.Interval = TimeSpan.FromSeconds(10);
+            //arduinoTimer.Tick += arduinoTimer_TickAsync;
+            //arduinoTimer.Start();
         }
 
-
-
-
-        //This would read the values from sensors, now generates random number
-        private async void readvalTimer_TickAsync(object sender, object e)
+        //Sends values to cloud
+        private async void sendToCloudTimer_TickAsync(object sender, object e)
         {
-            sendReceive();
+            sendAzure();
         }
 
-        private async void sendReceive()
+        //Communicates with Arduino
+        //private async void arduinoTimer_TickAsync(object sender, object e)
+        //{
+
+        //}
+
+        private async void sendAzure()
         {
             ArduinoData arduinodata = new ArduinoData();
 
-            data.timecreated = DateTime.Now;
+            envdata.timecreated = DateTime.Now;
 
             arduinodata = await serialRead();
 
@@ -91,16 +87,16 @@ namespace kontti
             //data.Temperature = random.NextDouble(); //arduinodata.Temperature;
             //data.Humidity = random.NextDouble();//arduinodata.Humidity;
 
-            data.Temperature = Math.Round(arduinodata.Temperature, 2);
-            data.Humidity = Math.Round(arduinodata.Humidity, 2);
+            envdata.Temperature = Math.Round(arduinodata.Temperature, 2);
+            envdata.Humidity = Math.Round(arduinodata.Humidity, 2);
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 
-            string jsonString = convertData(data);
+            string jsonString = convertData(envdata);
 
             sendData(deviceClient, jsonString);
 
-            receiveData(deviceClient);
+         //   receiveData(deviceClient);
         }
 
 
@@ -118,29 +114,41 @@ namespace kontti
             await deviceClient.SendEventAsync(message);
         }
 
-        //receive data from azure
-        public async void receiveData(DeviceClient deviceClient)
+        ////receive data from azure
+        //public async void receiveData(DeviceClient deviceClient)
+        //{
+        //    try
+        //    {
+        //        var receivedMessage = await deviceClient.ReceiveAsync();
+
+        //        if (receivedMessage != null)
+        //        {
+        //            var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
+        //            deviceClient.CompleteAsync(receivedMessage);
+        //            Debug.WriteLine(messageData);
+        //        }
+        //        else
+        //        {
+
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Debug.WriteLine("Exception when receiving message:" + e.Message);
+        //    }
+        //}
+
+        private static async void ReceiveC2dAsync(DeviceClient deviceClient)
         {
-            try
+            while (true)
             {
-                var receivedMessage = await deviceClient.ReceiveAsync();
-
-                if (receivedMessage != null)
-                {
-                    var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
-                    deviceClient.CompleteAsync(receivedMessage);
-                    Debug.WriteLine(messageData);
-                }
-                else
-                {
-
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Exception when receiving message:" + e.Message);
+                Message receivedMessage = await deviceClient.ReceiveAsync();
+                if (receivedMessage == null) continue;
+                await deviceClient.CompleteAsync(receivedMessage);
+                Debug.WriteLine(receivedMessage);
             }
         }
+
 
         private async Task<ArduinoData> serialRead()
         {
@@ -178,7 +186,7 @@ namespace kontti
             {
                 await dataReaderObject.LoadAsync(256);
                 var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                data = Newtonsoft.Json.JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
+                data = JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
                 Debug.WriteLine(receivedStrings.Trim());
             }
             catch (Exception ex)
@@ -214,7 +222,6 @@ namespace kontti
                 serialPort.DataBits = 8;
 
             }
-
             catch (Exception ex)
             {
                 Debug.WriteLine("OOps, Something went wrong! \n" + ex.Message);

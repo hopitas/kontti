@@ -11,4 +11,10 @@ namespace kontti.Model
         public double Humidity { get; set; }
 
     }
+
+    class ArduinoData
+    {
+        public double Temperature { get; set; }
+        public double Humidity { get; set; }
+    }
 }
