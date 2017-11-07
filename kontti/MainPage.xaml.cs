@@ -11,7 +11,6 @@ using Windows.Storage.Streams;
 using Windows.Devices.SerialCommunication;
 using Windows.Devices.Enumeration;
 using System.Linq;
-using System.Threading;
 
 namespace kontti
 {
@@ -21,6 +20,8 @@ namespace kontti
         string connectionString;
         private DispatcherTimer sendToCloudTimer;
         private DispatcherTimer arduinoTimer;
+        bool lightonTemp = false;
+        private int readings = 0;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
         DataWriter dataWriterObject = null;
@@ -56,11 +57,11 @@ namespace kontti
             sendToCloudTimer.Tick += sendToCloudTimer_TickAsync;
             sendToCloudTimer.Start();
 
-            ////timer for communicating with Arduino every 10 seconds
-            //arduinoTimer = new DispatcherTimer();
-            //arduinoTimer.Interval = TimeSpan.FromSeconds(10);
-            //arduinoTimer.Tick += arduinoTimer_TickAsync;
-            //arduinoTimer.Start();
+            //timer for communicating with Arduino every 10 seconds
+            arduinoTimer = new DispatcherTimer();
+            arduinoTimer.Interval = TimeSpan.FromSeconds(10);
+            arduinoTimer.Tick += arduinoTimer_TickAsync;
+            arduinoTimer.Start();
         }
 
         //Sends values to cloud
@@ -70,25 +71,40 @@ namespace kontti
         }
 
         //Communicates with Arduino
-        //private async void arduinoTimer_TickAsync(object sender, object e)
-        //{
-
-        //}
-
-        private async void sendAzure()
+        private async void arduinoTimer_TickAsync(object sender, object e)
         {
             ArduinoData arduinodata = new ArduinoData();
 
-            envdata.timecreated = DateTime.Now;
-
             arduinodata = await serialRead();
 
+            envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
+            envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+            readings++;
+
+            if (arduinodata.Lighton != lightonTemp)
+            {
+                envdata.Lighton = arduinodata.Lighton;
+                envdata.LightSwitchTime = DateTime.Now;
+                lightonTemp = arduinodata.Lighton;
+            }
+            if (arduinodata.Watered == true)
+            {
+                envdata.Watered = DateTime.Now;
+            }
+
+            envdata.timecreated = DateTime.Now;
+
+        }
+
+        private async void sendAzure()
+        {
             //Random random = new Random();
             //data.Temperature = random.NextDouble(); //arduinodata.Temperature;
             //data.Humidity = random.NextDouble();//arduinodata.Humidity;
 
-            envdata.Temperature = Math.Round(arduinodata.Temperature, 2);
-            envdata.Humidity = Math.Round(arduinodata.Humidity, 2);
+            envdata.Temperature = envdata.Temperature / readings;
+            envdata.Humidity = envdata.Humidity / readings;
+            readings = 0;
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 

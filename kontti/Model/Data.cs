@@ -9,12 +9,16 @@ namespace kontti.Model
         public DateTime timecreated { get; set; }
         public double Temperature { get; set; }
         public double Humidity { get; set; }
-
+        public bool Lighton { get; set; }
+        public DateTime LightSwitchTime { get; set; }
+        public DateTime Watered { get; set; }
     }
 
     class ArduinoData
     {
         public double Temperature { get; set; }
         public double Humidity { get; set; }
+        public bool Watered { get; set; }
+        public bool Lighton { get; set; }
     }
 }

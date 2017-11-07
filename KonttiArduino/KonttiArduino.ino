@@ -16,12 +16,11 @@ char messagechar[11];
 int number = 0;
 float t1 = 0;
 float h1 = 0;
-int readamount = 0;
 long randNumber;
 StaticJsonBuffer<200> jsonBuffer;
 JsonObject& json = jsonBuffer.createObject();
 int pump = 3;												// pump pin
-int light = 4;												// light pin
+int light = 2;												// light pin
 byte wLevelLimit = 6;										// Upper container max water level 
 byte wLevelEmpty = 5;										// lower container empty
 short sensor_wLevelLimit = 1;								// Upper container water level sensor reading
@@ -29,12 +28,14 @@ short sensor_wLevelEmpty = 0;								// Lower container wlevel
 unsigned long previousWaterMillis = 0;
 unsigned long previousLightMillis = 0;
 unsigned long previousDHTMillis = 0;
-long defaultwateringinterval = 1000 * 60 * 60 * 6;			// Watering interval (milliseconds) 6 hours...
-long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
-long defaultlighton = 1000 * 60 * 60 * 16;					// lights on 16h / day
-long defaultlightoff = 1000 * 60 * 60 * 8;					// Lights off 8h / day
-long defaultlightinterval;
+unsigned long defaultwateringinterval = 21600000;  //1000 * 60 * 60 * 6	// Watering interval (milliseconds) 6 hours...
+unsigned long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
+unsigned long defaultlighton = 57600000; //1000 * 60 * 60 * 16;					// lights on 16h / day
+unsigned long defaultlightoff = 28800000; //1000 * 60 * 60 * 8;					// Lights off 8h / day
+unsigned long defaultlightinterval;
 bool defaultlightswitch = true;
+bool watered = false;
+bool lighton = true;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -66,19 +67,20 @@ void loop() {
 void lightTimer(unsigned long currentLightMillis, long lightInterval)
 {
 	if (currentLightMillis - previousLightMillis >= lightInterval) {
-		defaultlightswitch = !defaultlightswitch;
-		lightSwitch(defaultlightswitch); //switch lights
-		previousLightMillis = currentLightMillis;
 
 		// switch between on/off interval
 		if (defaultlightinterval == defaultlighton)
 		{
 			defaultlightinterval = defaultlightoff;
+			defaultlightswitch = false;
 		}
 		else
 		{
 			defaultlightinterval = defaultlighton;
+			defaultlightswitch = true;
 		}
+		lightSwitch(defaultlightswitch); //switch lights
+		previousLightMillis = currentLightMillis;
 	}
 }
 
@@ -87,10 +89,12 @@ void lightSwitch(bool on)
 	if (on == true)
 	{
 		digitalWrite(light, HIGH);
+		lighton = true;
 	}
 	else
 	{
 		digitalWrite(light, LOW);
+		lighton = false;
 	}
 }
 
@@ -109,8 +113,8 @@ void watering(unsigned long currentWaterMillis, long wateringInterval) {
 			sensor_wLevelEmpty = digitalRead(wLevelEmpty);
 			sensor_wLevelLimit = digitalRead(wLevelLimit);
 		}
-		digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn off pump
-															// save the last time when watered
+		digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn pump off
+		watered = true;										// rise watered flag
 		previousWaterMillis = currentWaterMillis;
 	}
 }
@@ -119,9 +123,8 @@ void watering(unsigned long currentWaterMillis, long wateringInterval) {
 void readDHT(unsigned long currentDHTMillis, long dhtreadinginterval) {
 
 	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
-		h1 += dht.readHumidity();
-		t1 += dht.readTemperature();
-		readamount++;
+		h1 = dht.readHumidity();
+		t1 = dht.readTemperature();
 		previousDHTMillis = currentDHTMillis;
 	}
 }
@@ -136,12 +139,11 @@ void serialEvent()
 		switch (number)
 		{
 		case 1:
-			// Take average
-			t1 = t1 / readamount;
-			h1 = h1 / readamount;
-			readamount = 0;
 			json["temperature"] = t1;
 			json["humidity"] = h1;
+			json["watered"] = watered;
+			json["lighton"] = lighton;					// Tells if light is on or off
+			watered = false;							// If watered between serial events, send true to Rpi and then set watered flag false
 			json.printTo(Serial);
 			break;
 

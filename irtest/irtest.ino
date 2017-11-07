@@ -1,59 +1,37 @@
+/*
+* IRremote: IRsendRawDemo - demonstrates sending IR codes with sendRaw
+* An IR LED must be connected to Arduino PWM pin 3.
+* Version 0.1 July, 2009
+* Copyright 2009 Ken Shirriff
+* http://arcfn.com
+*
+* IRsendRawDemo - added by AnalysIR (via www.AnalysIR.com), 24 August 2015
+*
+* This example shows how to send a RAW signal using the IRremote library.
+* The example signal is actually a 32 bit NEC signal.
+* Remote Control button: LGTV Power On/Off.
+* Hex Value: 0x20DF10EF, 32 bits
+*
+* It is more efficient to use the sendNEC function to send NEC signals.
+* Use of sendRaw here, serves only as an example of using the function.
+*
+*/
+
+
 #include <IRremote.h>
-#define sprint Serial.print 
-#define sprintln Serial.println
 
-#define IR_RCVR_PIN 11
-int BUTTON_PIN = 12;
-int STATUS_PIN = 13;
-
-IRrecv ir_receiver(IR_RCVR_PIN);
-decode_results results;
 IRsend irsend;
-unsigned int raw[101] = { 0x6,0x14,0x7,0x14,0x6,0x1B,0x7,0x1B,0x7,0x1B,0x7,0x14,0x7,0x13,0x7,0x1B,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x1B,0x6,0x14,0x7,0x14,0x7,0x13,0x7,0x1B,0x7,0x1B,0x7,0x13,0x7,0x14,0x7,0x1B,0x7,0x13,0x7,0x1B,0x7,0x14,0x7,0x13,0x7,0x1B,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x13,0x7,0x14,0x7,0x14,0x6,0x14,0x7,0x14, };
-int lastButtonState;
-int buttonstate = LOW;
 
-void setup() {
-	Serial.begin(9600);
-	pinMode(BUTTON_PIN, INPUT);
-	ir_receiver.enableIRIn(); // Start the receiver
+void setup()
+{
 
 }
 
 void loop() {
-	irsend.sendRaw(raw, 101, 38);
-	delay(5000);
+	int khz = 38; // 38kHz carrier frequency for the NEC protocol
+//	unsigned int irSignal[] = { m250 s1100 m250 s1050 m250 s1450 m250 s1450 m250 s1450 m250 s1050 m250 s1100 m250 s1450 m250 s1050 m250 s1100 m250 s1050 m250 s1100 m250 s1050 m250 s1100 m250 s1450 m250 s1450 m250 s1400 m250 s1100 m250 s1100 m200 s1100 m250 s1450 m250 s1450 m250 s1050 m250 s1450 m250 s1100 m250 s1050 m250 s1100 m250 s1050 m250 s1100 m250 s1050 m250 s1100 m250 ,1050 ,250 ,1100 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1100 ,250 ,1050 ,250 ,1100 ,250 ,1050 }; //AnalysIR Batch Export (IRremote) - RAW
 
-}
+	irsend.sendRaw(irSignal, sizeof(irSignal) / sizeof(irSignal[0]), khz); //Note the approach used to automatically calculate the size of the array.
 
-int c = 1;
-
-void dump(decode_results *results) {
-	int count = results->rawlen;
-	sprintln(c);
-	c++;
-	sprintln("For IR Scope: ");
-	for (int i = 1; i < count; i++) {
-		sprint("0x");
-		sprint((unsigned int)results->rawbuf[i], HEX);
-		sprint(" ");
-	}
-
-	sprintln("");
-	sprintln("For Arduino sketch: ");
-	sprint("unsigned int raw[");
-	sprint(count, DEC);
-	sprint("] = {");
-	for (int i = 1; i < count; i++) {
-		sprint("0x");
-		sprint((unsigned int)results->rawbuf[i], HEX);
-		sprint(",");
-	}
-	sprint("};");
-	sprintln("");
-	sprint("irsend.sendRaw(raw,");
-	sprint(count, DEC);
-	sprint(",38);");
-	sprintln("");
-	sprintln("");
+	delay(5000); //In this example, the signal will be repeated every 5 seconds, approximately.
 }
