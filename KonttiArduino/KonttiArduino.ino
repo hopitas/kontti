@@ -34,8 +34,14 @@ unsigned long defaultlighton = 57600000; //1000 * 60 * 60 * 16;					// lights on
 unsigned long defaultlightoff = 28800000; //1000 * 60 * 60 * 8;					// Lights off 8h / day
 unsigned long defaultlightinterval;
 bool defaultlightswitch = true;
-bool watered = false;
+bool watered = true;
 bool lighton = true;
+
+class ReadDHT
+{
+
+};
+
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -57,14 +63,45 @@ void setup() {
 // the loop function runs over and over again until power down or reset
 void loop() {
 	unsigned long currentMillis = millis();
-	watering(currentMillis, defaultwateringinterval);
+	waterTimer(currentMillis, defaultwateringinterval);
 	readDHT(currentMillis, defaultdhtreadinginterval);
 	lightTimer(currentMillis, defaultlightinterval);
 }
 
+// Read temperature and humidity
+void readDHT(unsigned long currentDHTMillis, unsigned long dhtreadinginterval) {
+
+	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
+		h1 = dht.readHumidity();
+		t1 = dht.readTemperature();
+		previousDHTMillis = currentDHTMillis;
+	}
+}
+
+
+//Go through watering cycle
+void waterTimer(unsigned long currentWaterMillis, unsigned long wateringInterval) {
+
+	if (currentWaterMillis - previousWaterMillis >= wateringInterval) {
+
+		sensor_wLevelEmpty = digitalRead(wLevelEmpty);
+		sensor_wLevelLimit = digitalRead(wLevelLimit);
+		//check that lower container has water and higher container is not full
+		if (sensor_wLevelEmpty == 0 && sensor_wLevelLimit == 1)
+		{													// wlevel gives 1 when empty
+			digitalWrite(pump, HIGH);  						// pump on
+		}
+		else
+		{
+			digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn pump off
+			watered = true;
+			previousWaterMillis = currentWaterMillis;
+		}   // rise watered flag
+	}
+}
 
 //Lightning default timer
-void lightTimer(unsigned long currentLightMillis, long lightInterval)
+void lightTimer(unsigned long currentLightMillis, unsigned long lightInterval)
 {
 	if (currentLightMillis - previousLightMillis >= lightInterval) {
 
@@ -98,37 +135,6 @@ void lightSwitch(bool on)
 	}
 }
 
-//Go through watering cycle
-void watering(unsigned long currentWaterMillis, long wateringInterval) {
-
-	if (currentWaterMillis - previousWaterMillis >= wateringInterval) {
-		sensor_wLevelEmpty = digitalRead(wLevelEmpty);
-		sensor_wLevelLimit = digitalRead(wLevelLimit);
-
-		//check that lower container has water and higher container is not full
-		while (sensor_wLevelEmpty == 0 && sensor_wLevelLimit == 1)
-		{													// wlevel gives 1 when empty
-			digitalWrite(pump, HIGH);  						// pump on
-			delay(5000);									// wait 5s
-			sensor_wLevelEmpty = digitalRead(wLevelEmpty);
-			sensor_wLevelLimit = digitalRead(wLevelLimit);
-		}
-		digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn pump off
-		watered = true;										// rise watered flag
-		previousWaterMillis = currentWaterMillis;
-	}
-}
-
-// Read temperature and humidity
-void readDHT(unsigned long currentDHTMillis, long dhtreadinginterval) {
-
-	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
-		h1 = dht.readHumidity();
-		t1 = dht.readTemperature();
-		previousDHTMillis = currentDHTMillis;
-	}
-}
-
 // callback to RPI for received data
 void serialEvent()
 {
@@ -141,10 +147,13 @@ void serialEvent()
 		case 1:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
-			json["watered"] = watered;
-			json["lighton"] = lighton;					// Tells if light is on or off
-			watered = false;							// If watered between serial events, send true to Rpi and then set watered flag false
+			json["watered"] = watered;					// If watered between serial events, send true to Rpi and then set watered flag false
+			json["lighton"] = lighton;					// Tells if light is on or off					
 			json.printTo(Serial);
+			if (watered == true)						// We want to make sure we send atleast 1 watered flag when its done and only then set it false
+			{
+				watered = false;
+			}
 			break;
 
 		default:

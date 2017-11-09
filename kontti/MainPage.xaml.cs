@@ -75,24 +75,36 @@ namespace kontti
         {
             ArduinoData arduinodata = new ArduinoData();
 
-            arduinodata = await serialRead();
-
-            envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
-            envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
-            readings++;
-
-            if (arduinodata.Lighton != lightonTemp)
+            try
             {
-                envdata.Lighton = arduinodata.Lighton;
-                envdata.LightSwitchTime = DateTime.Now;
-                lightonTemp = arduinodata.Lighton;
+                arduinodata = await serialRead();
             }
-            if (arduinodata.Watered == true)
+            catch (Exception ex)
             {
-                envdata.Watered = DateTime.Now;
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine("Could not get data from Arduino");
+                ListAvailablePorts();
             }
 
-            envdata.timecreated = DateTime.Now;
+            if (arduinodata != null)
+            {
+                envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
+                envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+                readings++;
+
+                if (arduinodata.Lighton != lightonTemp)
+                {
+                    envdata.Lighton = arduinodata.Lighton;
+                    envdata.LightSwitchTime = DateTime.Now;
+                    lightonTemp = arduinodata.Lighton;
+                }
+
+                if (arduinodata.Watered == true)
+                {
+                    envdata.WateredTime = DateTime.Now;
+                    envdata.Watered = true; //Sends azure if watered in this 10min cycle
+                }
+            }
 
         }
 
@@ -105,6 +117,7 @@ namespace kontti
             envdata.Temperature = envdata.Temperature / readings;
             envdata.Humidity = envdata.Humidity / readings;
             readings = 0;
+            envdata.timecreated = DateTime.Now;
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 
@@ -112,14 +125,26 @@ namespace kontti
 
             sendData(deviceClient, jsonString);
 
-         //   receiveData(deviceClient);
+            envdata.Watered = false;
+
+            //   receiveData(deviceClient);
         }
 
 
         private string convertData(Data data)
         {
-            string jsonString = JsonConvert.SerializeObject(data);
-            Debug.WriteLine(jsonString);
+            string jsonString = "";
+            try
+            {
+                jsonString = JsonConvert.SerializeObject(data);
+                Debug.WriteLine(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine("Json parse error");
+            }
+
             return jsonString;
         }
 
@@ -224,12 +249,13 @@ namespace kontti
 
         private async void ListAvailablePorts()
         {
+
+
             try
             {
                 string aqs = SerialDevice.GetDeviceSelector();
                 var dis = await DeviceInformation.FindAllAsync(aqs);
                 var selectedPort = dis.Where(t => t.Name == "Genuino Uno").First();
-
                 serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
                 serialPort.ReadTimeout = TimeSpan.FromMilliseconds(1000);
                 serialPort.BaudRate = 115200;
@@ -240,7 +266,8 @@ namespace kontti
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("OOps, Something went wrong! \n" + ex.Message);
+                Debug.WriteLine("Arduino not connected! \n" + ex.Message);
+              //  serialPort.Dispose();  
             }
         }
     }
