@@ -20,12 +20,14 @@ namespace kontti
         string connectionString;
         private DispatcherTimer sendToCloudTimer;
         private DispatcherTimer arduinoTimer;
+        private DispatcherTimer wateringTimer;
         bool lightonTemp = false;
         private int readings = 0;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
         DataWriter dataWriterObject = null;
         private Data envdata;
+        private Timers timers;
         private byte[] WriteBuf = new byte[1];
 
         public MainPage()
@@ -38,6 +40,13 @@ namespace kontti
                 displayname = "KonttiRaspi",
                 organization = "T&T",
                 timecreated = DateTime.Now.ToLocalTime()
+            };
+
+            timers = new Timers
+            {
+                Lightson = new DateTime(2017, 15, 11, 7, 0, 0),
+                Lightsoff = new DateTime(2017, 15, 11, 23, 0, 0),
+                Wateringinterwall = 6
             };
 
             //Azure connection string, tätä ei sais päästää githubii
@@ -62,6 +71,13 @@ namespace kontti
             arduinoTimer.Interval = TimeSpan.FromSeconds(10);
             arduinoTimer.Tick += arduinoTimer_TickAsync;
             arduinoTimer.Start();
+
+            //timer for watering
+            wateringTimer = new DispatcherTimer();
+            wateringTimer.Interval = TimeSpan.FromHours(timers.Wateringinterwall);
+            wateringTimer.Tick += wateringTimer_TickAsync;
+            wateringTimer.Start();
+
         }
 
         //Sends values to cloud
@@ -70,14 +86,62 @@ namespace kontti
             sendAzure();
         }
 
+
+        //Sends watering command to arduino
+        private async void wateringTimer_TickAsync(object sender, object e)
+        {
+
+            try
+            {
+                await serialRead(2);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine("Could not send data to Arduino");
+                ListAvailablePorts();
+            }
+
+        }
+
         //Communicates with Arduino
         private async void arduinoTimer_TickAsync(object sender, object e)
         {
             ArduinoData arduinodata = new ArduinoData();
 
+            // IF time is greater than light on time and smaller than lightoff time and lights are off, tell arduino to switch lights on
+            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightson.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == false)
+            {
+                try
+                {
+                    await serialRead(3);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine("Could not send data to Arduino");
+                    ListAvailablePorts();
+                }
+            }
+
+            // if time greater than lights off time and lights are on, turn them off
+            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
+            {
+                try
+                {
+                    await serialRead(4);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine("Could not send data Arduino");
+                    ListAvailablePorts();
+                }
+            }
+
             try
             {
-                arduinodata = await serialRead();
+                arduinodata = await serialRead(1);
             }
             catch (Exception ex)
             {
@@ -103,6 +167,7 @@ namespace kontti
                 {
                     envdata.WateredTime = DateTime.Now;
                     envdata.Watered = true; //Sends azure if watered in this 10min cycle
+                    envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
                 }
             }
 
@@ -191,7 +256,7 @@ namespace kontti
         }
 
 
-        private async Task<ArduinoData> serialRead()
+        private async Task<ArduinoData> serialRead(byte caseArduino)
         {
 
             dataReaderObject = new DataReader(serialPort.InputStream);
@@ -201,7 +266,7 @@ namespace kontti
             try
             {
                 Task<UInt32> storeAsyncTask1;
-                WriteBuf[0] = 1;
+                WriteBuf[0] = caseArduino;
                 dataWriterObject.WriteBytes(WriteBuf);
                 storeAsyncTask1 = dataWriterObject.StoreAsync().AsTask();
                 UInt32 bytesWritten1 = await storeAsyncTask1;
@@ -223,27 +288,30 @@ namespace kontti
                 Debug.WriteLine("Could not write to Arduino");
             }
 
-            try
+
+            if (caseArduino == 1)
             {
-                await dataReaderObject.LoadAsync(256);
-                var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                data = JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
-                Debug.WriteLine(receivedStrings.Trim());
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                ListAvailablePorts();
-            }
-            finally
-            {
-                if (dataReaderObject != null)
+                try
                 {
-                    dataReaderObject.DetachStream();
-                    dataReaderObject = null;
+                    await dataReaderObject.LoadAsync(256);
+                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
+                    data = JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
+                    Debug.WriteLine(receivedStrings.Trim());
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    ListAvailablePorts();
+                }
+                finally
+                {
+                    if (dataReaderObject != null)
+                    {
+                        dataReaderObject.DetachStream();
+                        dataReaderObject = null;
+                    }
                 }
             }
-
             return data;
         }
 
@@ -267,7 +335,7 @@ namespace kontti
             catch (Exception ex)
             {
                 Debug.WriteLine("Arduino not connected! \n" + ex.Message);
-              //  serialPort.Dispose();  
+                //  serialPort.Dispose();  
             }
         }
     }
