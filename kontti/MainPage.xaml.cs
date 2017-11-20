@@ -42,6 +42,7 @@ namespace kontti
                 timecreated = DateTime.Now.ToLocalTime()
             };
 
+            //Default timers
             timers = new Timers
             {
                 Lightson = new DateTime(2017, 15, 11, 7, 0, 0),
