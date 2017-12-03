@@ -29,6 +29,10 @@ unsigned long defaultwateringinterval = 21600000;  //1000 * 60 * 60 * 6	// Water
 unsigned long defaultlighton = 57600000; //1000 * 60 * 60 * 16;					// lights on 16h / day
 unsigned long defaultlightoff = 28800000; //1000 * 60 * 60 * 8;					// Lights off 8h / day
 unsigned long maxinterval = 3600000; // if we don't get message from Rpi in maxinterval we go to default loop
+unsigned long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
+float t1 = 0;
+float h1 = 0;
+unsigned long previousDHTMillis = 0;
 unsigned long defaultlightinterval;
 unsigned long currentMillis;
 bool defaultlightswitch = true;
@@ -36,40 +40,6 @@ bool returnwatered = true;
 bool lighton = true;
 bool wlevelok = false;
 bool watertime = false;
-
-struct TH {
-	float t1, h1;
-};
-
-struct TH th;
-
-class ReadDHT
-{
-	//State maintaining variables
-	int  updateInterval;      // interval between updates
-	unsigned long lastUpdate; // last update of measurement
-
-public:
-	ReadDHT(int interval)
-	{
-		updateInterval = interval;
-	}
-
-	struct TH Update()
-	{
-		struct TH th;
-		if ((millis() - lastUpdate) > updateInterval)  // time to update
-		{
-			th.h1 = dht.readHumidity();
-			th.t1 = dht.readTemperature();
-			lastUpdate = millis();
-		}
-		return th;
-	}
-
-};
-
-ReadDHT readDHT(2000);
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -90,7 +60,7 @@ void setup() {
 // the loop function runs over and over again until power down or reset
 void loop() {
 	currentMillis = millis();
-	th = readDHT.Update();
+	readDHT(currentMillis, defaultdhtreadinginterval);
 
 	if (watertime == true)
 	{
@@ -108,6 +78,16 @@ void pulseTimer(unsigned long currentPulseMillis, unsigned long maxpulseinterval
 	if (currentPulseMillis - previousMaxintervalMillis >= maxpulseinterval) {
 		waterTimer(currentMillis, defaultwateringinterval);
 		lightTimer(currentMillis, defaultlightinterval);
+	}
+}
+
+// Read temperature and humidity
+void readDHT(unsigned long currentDHTMillis, unsigned long dhtreadinginterval) {
+
+	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
+		h1 = dht.readHumidity();
+		t1 = dht.readTemperature();
+		previousDHTMillis = currentDHTMillis;
 	}
 }
 
@@ -198,8 +178,8 @@ void serialEvent()
 		switch (number)
 		{
 		case 1:
-			json["temperature"] = th.t1;
-			json["humidity"] = th.h1;
+			json["temperature"] = t1;
+			json["humidity"] = h1;
 			json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
 			json["wlevelok"] = wlevelok;
 			json["lighton"] = lighton;					// Tells if light is on or off					

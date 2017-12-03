@@ -45,8 +45,8 @@ namespace kontti
             //Default timers
             timers = new Timers
             {
-                Lightson = new DateTime(2017, 15, 11, 7, 0, 0),
-                Lightsoff = new DateTime(2017, 15, 11, 23, 0, 0),
+                Lightson = new DateTime(2017, 12, 3, 7, 0, 0),
+                Lightsoff = new DateTime(2017, 12, 3, 23, 0, 0),
                 Wateringinterwall = 6
             };
 
@@ -78,6 +78,17 @@ namespace kontti
             wateringTimer.Interval = TimeSpan.FromHours(timers.Wateringinterwall);
             wateringTimer.Tick += wateringTimer_TickAsync;
             wateringTimer.Start();
+
+
+         //  tesMethodAsync();
+        }
+
+        private async Task tesMethodAsync()
+        {
+           await serialRead(3);
+           await serialRead(2);
+           await serialRead(4);
+           await serialRead(1);
 
         }
 
