@@ -36,9 +36,9 @@ unsigned long previousDHTMillis = 0;
 unsigned long defaultlightinterval;
 unsigned long currentMillis;
 bool defaultlightswitch = true;
-bool returnwatered = true;
+bool returnwatered = false;
 bool lighton = true;
-bool wlevelok = false;
+bool wlevelok = true;
 bool watertime = false;
 
 // the setup function runs once when you press reset or power the board

@@ -109,7 +109,7 @@ namespace kontti
         {
             ArduinoData arduinodata = new ArduinoData();
 
-            // IF time is greater than light on time and smaller than lightoff time and lights are off, tell arduino to switch lights on
+            // if time greater than lights off time and lights are on, turn them off
             if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightson.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == false)
             {
                 try
@@ -119,14 +119,13 @@ namespace kontti
                 catch (Exception ex)
                 {
                     Debug.WriteLine(ex.Message);
-                    Debug.WriteLine("Could not send data to Arduino");
+                    Debug.WriteLine("Could not send data Arduino");
                     ListAvailablePorts();
                 }
             }
-
-            // if time greater than lights off time and lights are on, turn them off
-            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks &&  envdata.Lighton == true)
+            if (DateTime.Now.TimeOfDay.Ticks > timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
             {
+              
                 try
                 {
                     await serialRead(4);
@@ -189,7 +188,7 @@ namespace kontti
             string jsonString = convertData(envdata);
 
             sendData(deviceClient, jsonString);
-
+            
             envdata.Watered = false;
 
             //   receiveData(deviceClient);
@@ -312,6 +311,7 @@ namespace kontti
                     }
                 }
             }
+
             return data;
         }
 
