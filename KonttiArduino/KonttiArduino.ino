@@ -148,7 +148,6 @@ bool watering()
 		}
 		digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn pump off
 		returnwatered = true;
-		bool resetwatertimer = true;
 		watered = true;
 	}
 	return watered;

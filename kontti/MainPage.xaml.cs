@@ -78,18 +78,6 @@ namespace kontti
             wateringTimer.Interval = TimeSpan.FromHours(timers.Wateringinterwall);
             wateringTimer.Tick += wateringTimer_TickAsync;
             wateringTimer.Start();
-
-
-         //  tesMethodAsync();
-        }
-
-        private async Task tesMethodAsync()
-        {
-           await serialRead(3);
-           await serialRead(2);
-           await serialRead(4);
-           await serialRead(1);
-
         }
 
         //Sends values to cloud
@@ -137,7 +125,7 @@ namespace kontti
             }
 
             // if time greater than lights off time and lights are on, turn them off
-            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
+            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks &&  envdata.Lighton == true)
             {
                 try
                 {
