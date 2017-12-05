@@ -64,7 +64,7 @@ void loop() {
 
 	if (watertime == true)
 	{
-	 watertime != watering(); // if we get watertime from rpi, it is true until watering is false.
+	 watering(); // if we get watertime from rpi, it is true until watering is false.
 	}
 
 	//We start arduino default cycles only if there is no pulse in 1h from rpi
@@ -78,6 +78,8 @@ void pulseTimer(unsigned long currentPulseMillis, unsigned long maxpulseinterval
 	if (currentPulseMillis - previousMaxintervalMillis >= maxpulseinterval) {
 		waterTimer(currentMillis, defaultwateringinterval);
 		lightTimer(currentMillis, defaultlightinterval);
+		// reset pulsetimer
+		previousMaxintervalMillis = currentMillis;
 	}
 }
 
@@ -149,6 +151,7 @@ bool watering()
 		digitalWrite(pump, LOW);							// when waterlevel reached, or container empty, turn pump off
 		returnwatered = true;
 		watered = true;
+		watertime = false;
 	}
 	return watered;
 }

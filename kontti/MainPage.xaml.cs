@@ -29,6 +29,7 @@ namespace kontti
         private Data envdata;
         private Timers timers;
         private byte[] WriteBuf = new byte[1];
+        DateTime wt1, wt2, wt3, wt4;
 
         public MainPage()
         {
@@ -41,6 +42,11 @@ namespace kontti
                 organization = "T&T",
                 timecreated = DateTime.Now.ToLocalTime()
             };
+
+            wt1 = new DateTime(2017, 12, 3, 6, 0, 0);
+            wt2 = new DateTime(2017, 12, 3, 12, 0, 0);
+            wt3 = new DateTime(2017, 12, 3, 18, 0, 0);
+            wt4 = new DateTime(2017, 12, 3, 0, 00, 0);
 
             //Default timers
             timers = new Timers
@@ -67,17 +73,11 @@ namespace kontti
             sendToCloudTimer.Tick += sendToCloudTimer_TickAsync;
             sendToCloudTimer.Start();
 
-            //timer for communicating with Arduino every 10 seconds
+            //timer for communicating with Arduino every 20 seconds
             arduinoTimer = new DispatcherTimer();
-            arduinoTimer.Interval = TimeSpan.FromSeconds(10);
+            arduinoTimer.Interval = TimeSpan.FromSeconds(20);
             arduinoTimer.Tick += arduinoTimer_TickAsync;
             arduinoTimer.Start();
-
-            //timer for watering
-            wateringTimer = new DispatcherTimer();
-            wateringTimer.Interval = TimeSpan.FromHours(timers.Wateringinterwall);
-            wateringTimer.Tick += wateringTimer_TickAsync;
-            wateringTimer.Start();
         }
 
         //Sends values to cloud
@@ -86,28 +86,33 @@ namespace kontti
             sendAzure();
         }
 
-
-        //Sends watering command to arduino
-        private async void wateringTimer_TickAsync(object sender, object e)
-        {
-
-            try
-            {
-                await serialRead(2);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine("Could not send data to Arduino");
-                ListAvailablePorts();
-            }
-
-        }
-
         //Communicates with Arduino
         private async void arduinoTimer_TickAsync(object sender, object e)
         {
             ArduinoData arduinodata = new ArduinoData();
+  
+            //watering
+            if ((wt1.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt1.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                ||
+                (wt2.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt2.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                ||
+                (wt3.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt3.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                ||
+                (wt4.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt4.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                )
+            {
+                try
+                {
+                    await serialRead(2);
+                    Debug.WriteLine("Watering");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine("Could not send data to Arduino");
+                    ListAvailablePorts();
+                }
+            }
 
             // if time greater than lights off time and lights are on, turn them off
             if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightson.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == false)
@@ -115,6 +120,7 @@ namespace kontti
                 try
                 {
                     await serialRead(3);
+                    Debug.WriteLine("Lights on!");
                 }
                 catch (Exception ex)
                 {
@@ -123,12 +129,13 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-            if (DateTime.Now.TimeOfDay.Ticks > timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
+            // If condition 1 isn't true, check condition 2
+            else if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
             {
-              
                 try
                 {
                     await serialRead(4);
+                    Debug.WriteLine("Lights off!");
                 }
                 catch (Exception ex)
                 {
@@ -137,39 +144,38 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-
-            try
-            {
-                arduinodata = await serialRead(1);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine("Could not get data from Arduino");
-                ListAvailablePorts();
-            }
-
-            if (arduinodata != null)
-            {
-                envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
-                envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
-                readings++;
-
-                if (arduinodata.Lighton != lightonTemp)
+       
+                try
                 {
-                    envdata.Lighton = arduinodata.Lighton;
-                    envdata.LightSwitchTime = DateTime.Now;
-                    lightonTemp = arduinodata.Lighton;
+                    arduinodata = await serialRead(1);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine("Could not get data from Arduino");
+                    ListAvailablePorts();
                 }
 
-                if (arduinodata.Watered == true)
+                if (arduinodata != null)
                 {
-                    envdata.WateredTime = DateTime.Now;
-                    envdata.Watered = true; //Sends azure if watered in this 10min cycle
-                    envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
-                }
-            }
+                    envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
+                    envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+                    readings++;
 
+                    if (arduinodata.Lighton != lightonTemp)
+                    {
+                        envdata.Lighton = arduinodata.Lighton;
+                        envdata.LightSwitchTime = DateTime.Now;
+                        lightonTemp = arduinodata.Lighton;
+                    }
+
+                    if (arduinodata.Watered == true)
+                    {
+                        envdata.WateredTime = DateTime.Now;
+                        envdata.Watered = true; //Sends azure if watered in this 10min cycle
+                        envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
+                    }
+                }
         }
 
         private async void sendAzure()
@@ -193,7 +199,6 @@ namespace kontti
 
             //   receiveData(deviceClient);
         }
-
 
         private string convertData(Data data)
         {
@@ -317,8 +322,6 @@ namespace kontti
 
         private async void ListAvailablePorts()
         {
-
-
             try
             {
                 string aqs = SerialDevice.GetDeviceSelector();
