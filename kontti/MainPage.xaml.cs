@@ -90,7 +90,7 @@ namespace kontti
         private async void arduinoTimer_TickAsync(object sender, object e)
         {
             ArduinoData arduinodata = new ArduinoData();
-  
+
             //watering
             if ((wt1.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt1.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
                 ||
@@ -114,8 +114,8 @@ namespace kontti
                 }
             }
 
-            // if time greater than lights off time and lights are on, turn them off
-            if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightson.TimeOfDay.Ticks && DateTime.Now.TimeOfDay.Ticks < timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == false)
+            // lightson timer
+            if ((timers.Lightson.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightson.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && envdata.Lighton == false)
             {
                 try
                 {
@@ -129,8 +129,8 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-            // If condition 1 isn't true, check condition 2
-            else if (DateTime.Now.TimeOfDay.Ticks >= timers.Lightsoff.TimeOfDay.Ticks && envdata.Lighton == true)
+            //lights off timer
+            if ((timers.Lightsoff.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightsoff.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && envdata.Lighton == true)
             {
                 try
                 {
@@ -144,38 +144,38 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-       
-                try
+
+            try
+            {
+                arduinodata = await serialRead(1);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                Debug.WriteLine("Could not get data from Arduino");
+                ListAvailablePorts();
+            }
+
+            if (arduinodata != null)
+            {
+                envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
+                envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+                readings++;
+
+                if (arduinodata.Lighton != lightonTemp)
                 {
-                    arduinodata = await serialRead(1);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                    Debug.WriteLine("Could not get data from Arduino");
-                    ListAvailablePorts();
+                    envdata.Lighton = arduinodata.Lighton;
+                    envdata.LightSwitchTime = DateTime.Now;
+                    lightonTemp = arduinodata.Lighton;
                 }
 
-                if (arduinodata != null)
+                if (arduinodata.Watered == true)
                 {
-                    envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
-                    envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
-                    readings++;
-
-                    if (arduinodata.Lighton != lightonTemp)
-                    {
-                        envdata.Lighton = arduinodata.Lighton;
-                        envdata.LightSwitchTime = DateTime.Now;
-                        lightonTemp = arduinodata.Lighton;
-                    }
-
-                    if (arduinodata.Watered == true)
-                    {
-                        envdata.WateredTime = DateTime.Now;
-                        envdata.Watered = true; //Sends azure if watered in this 10min cycle
-                        envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
-                    }
+                    envdata.WateredTime = DateTime.Now;
+                    envdata.Watered = true; //Sends azure if watered in this 10min cycle
+                    envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
                 }
+            }
         }
 
         private async void sendAzure()
@@ -194,7 +194,7 @@ namespace kontti
             string jsonString = convertData(envdata);
 
             sendData(deviceClient, jsonString);
-            
+
             envdata.Watered = false;
 
             //   receiveData(deviceClient);
