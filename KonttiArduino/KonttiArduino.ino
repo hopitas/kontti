@@ -35,6 +35,8 @@ float h1 = 0;
 unsigned long previousDHTMillis = 0;
 unsigned long defaultlightinterval;
 unsigned long currentMillis;
+unsigned long wateringStartTime = 0;
+unsigned long maxwateringtime = 600000; // 1000 * 60 * 10
 bool defaultlightswitch = true;
 bool returnwatered = false;
 bool lighton = true;
@@ -61,12 +63,14 @@ void setup() {
 void loop() {
 	currentMillis = millis();
 	readDHT(currentMillis, defaultdhtreadinginterval);
-
 	if (watertime == true)
 	{
-	 watering(); // if we get watertime from rpi, it is true until watering is false.
+	 watering(currentMillis, wateringStartTime); // if we get watertime from rpi, it is true until watering is false.
 	}
-
+	else
+	{
+		wateringStartTime = currentMillis;
+	}
 	//We start arduino default cycles only if there is no pulse in 1h from rpi
 	pulseTimer(currentMillis, maxinterval);
 }
@@ -97,10 +101,15 @@ void readDHT(unsigned long currentDHTMillis, unsigned long dhtreadinginterval) {
 void waterTimer(unsigned long currentWaterMillis, unsigned long wateringInterval) {
 
 	if (currentWaterMillis - previousWaterMillis >= wateringInterval) {
-		bool resetwatertimer =  watering();
+		bool resetwatertimer =  watering(currentMillis, wateringStartTime);
 		if (resetwatertimer == true)
 		{
 			previousWaterMillis = currentWaterMillis;
+			watertime = false;
+		}
+		else
+		{
+			watertime = true;
 		}
 	}   // rise watered flag
 }
@@ -127,16 +136,17 @@ void lightTimer(unsigned long currentLightMillis, unsigned long lightInterval)
 	}
 }
 
-bool watering()
+bool watering(unsigned long currentMillis, unsigned long wateringStartTime)
 {
 	bool watered;
 	sensor_wLevelEmpty = digitalRead(wLevelEmpty);
 	sensor_wLevelLimit = digitalRead(wLevelLimit);
 	//check that lower container has water and higher container is not full
-	if (sensor_wLevelEmpty == 0 && sensor_wLevelLimit == 1)
+	if (sensor_wLevelEmpty == 0 && sensor_wLevelLimit == 1 && (currentMillis - wateringStartTime < maxwateringtime)) 
 	{													// wlevel gives 1 when empty
 		digitalWrite(pump, HIGH);  						// pump on
 		watered = false;
+
 	}
 	else
 	{
@@ -153,6 +163,7 @@ bool watering()
 		watered = true;
 		watertime = false;
 	}
+	
 	return watered;
 }
 
@@ -182,27 +193,30 @@ void serialEvent()
 		case 1:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
-			json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
+	//		json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
 			json["wlevelok"] = wlevelok;
-			json["lighton"] = lighton;					// Tells if light is on or off					
+	//		json["lighton"] = lighton;					// Tells if light is on or off					
 			json.printTo(Serial);
-			if (returnwatered == true)						// We want to make sure we send atleast 1 watered flag when its done and only then set it false
-			{
-				returnwatered = false;
-			}
 			// reset pulsetimer
 			previousMaxintervalMillis = currentMillis;
 			break;
 		case 2:
 			//set watering time flag
+			json["Watered"] = true;
+			//json["wlevelok"] = wlevelok;
+			json.printTo(Serial);
 			watertime = true;
 			break;
 		case 3:
 			//lights on
+			json["Lightson"] = true;
+			json.printTo(Serial);
 			lightSwitch(true);
 			break;
 		case 4:
 			//lights off
+			json["Lightson"] = false;
+			json.printTo(Serial);
 			lightSwitch(false);
 			break;
 		case 5:

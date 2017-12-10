@@ -30,6 +30,7 @@ namespace kontti
         private Timers timers;
         private byte[] WriteBuf = new byte[1];
         DateTime wt1, wt2, wt3, wt4;
+        bool Wateredtemp = false;
 
         public MainPage()
         {
@@ -45,7 +46,7 @@ namespace kontti
 
             wt1 = new DateTime(2017, 12, 3, 6, 0, 0);
             wt2 = new DateTime(2017, 12, 3, 12, 0, 0);
-            wt3 = new DateTime(2017, 12, 3, 18, 0, 0);
+            wt3 = new DateTime(2017, 12, 3, 18, 0, 0); //18
             wt4 = new DateTime(2017, 12, 3, 0, 00, 0);
 
             //Default timers
@@ -92,19 +93,21 @@ namespace kontti
             ArduinoData arduinodata = new ArduinoData();
 
             //watering
-            if ((wt1.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt1.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+            if ((wt1.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt1.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours) && Wateredtemp == false)
                 ||
-                (wt2.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt2.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                (wt2.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt2.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours) && Wateredtemp == false)
                 ||
-                (wt3.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt3.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                (wt3.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt3.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours) && Wateredtemp == false)
                 ||
-                (wt4.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt4.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours))
+                (wt4.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt4.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours) && Wateredtemp == false)
                 )
             {
                 try
                 {
                     await serialRead(2);
                     Debug.WriteLine("Watering");
+                    Wateredtemp = true;
+
                 }
                 catch (Exception ex)
                 {
@@ -156,10 +159,15 @@ namespace kontti
                 ListAvailablePorts();
             }
 
+
             if (arduinodata != null)
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+                if (arduinodata.Wlevelok == false)
+                {
+                    envdata.Wleveok = arduinodata.Wlevelok;
+                }
                 readings++;
 
                 if (arduinodata.Lighton != lightonTemp)
@@ -169,11 +177,13 @@ namespace kontti
                     lightonTemp = arduinodata.Lighton;
                 }
 
-                if (arduinodata.Watered == true)
+                if (Wateredtemp == true)
                 {
                     envdata.WateredTime = DateTime.Now;
                     envdata.Watered = true; //Sends azure if watered in this 10min cycle
-                    envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
+                                            //  envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
+                    arduinodata.Watered = false;
+                    Wateredtemp = false;
                 }
             }
         }
@@ -195,7 +205,9 @@ namespace kontti
 
             sendData(deviceClient, jsonString);
 
+            //set the default values
             envdata.Watered = false;
+            envdata.Wleveok = true;
 
             //   receiveData(deviceClient);
         }
@@ -266,6 +278,9 @@ namespace kontti
             dataReaderObject = new DataReader(serialPort.InputStream);
             dataWriterObject = new DataWriter(serialPort.OutputStream);
             ArduinoData data = new ArduinoData();
+            WateredData wdata = new WateredData();
+            LightsData ldata = new LightsData();
+
 
             try
             {
@@ -292,7 +307,6 @@ namespace kontti
                 Debug.WriteLine("Could not write to Arduino");
             }
 
-
             if (caseArduino == 1)
             {
                 try
@@ -301,6 +315,83 @@ namespace kontti
                     var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
                     data = JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
                     Debug.WriteLine(receivedStrings.Trim());
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    ListAvailablePorts();
+                }
+                finally
+                {
+                    if (dataReaderObject != null)
+                    {
+                        dataReaderObject.DetachStream();
+                        dataReaderObject = null;
+                    }
+                }
+            }
+
+            if (caseArduino == 2)
+            {
+                try
+                {
+                    await dataReaderObject.LoadAsync(256);
+                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
+                    wdata = JsonConvert.DeserializeObject<WateredData>(receivedStrings);
+                    Debug.WriteLine(receivedStrings.Trim());
+                    data.Watered = wdata.Watered;
+                    //  data.Wlevelok = wdata.Wlevelok;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    ListAvailablePorts();
+                }
+                finally
+                {
+                    if (dataReaderObject != null)
+                    {
+                        dataReaderObject.DetachStream();
+                        dataReaderObject = null;
+                    }
+                }
+            }
+
+            if (caseArduino == 3)
+            {
+                try
+                {
+                    await dataReaderObject.LoadAsync(256);
+                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
+                    ldata = JsonConvert.DeserializeObject<LightsData>(receivedStrings);
+                    Debug.WriteLine(receivedStrings.Trim());
+                    data.Lighton = ldata.Lighton;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    ListAvailablePorts();
+                }
+                finally
+                {
+                    if (dataReaderObject != null)
+                    {
+                        dataReaderObject.DetachStream();
+                        dataReaderObject = null;
+                    }
+                }
+            }
+
+            if (caseArduino == 4)
+            {
+                try
+                {
+                    await dataReaderObject.LoadAsync(256);
+                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
+                    ldata = JsonConvert.DeserializeObject<LightsData>(receivedStrings);
+                    Debug.WriteLine(receivedStrings.Trim());
+
+                    data.Lighton = ldata.Lighton;
                 }
                 catch (Exception ex)
                 {

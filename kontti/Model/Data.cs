@@ -26,7 +26,17 @@ namespace kontti.Model
         public bool Lighton { get; set; }
     }
 
-    class Timers
+    class WateredData
+    {
+        public bool Watered { get; set; }
+    }
+
+    class LightsData
+    {
+        public bool Lighton { get; set; }
+    }
+
+        class Timers
     {
         public DateTime Lightson { get; set; }
         public DateTime Lightsoff { get; set; }
