@@ -6,6 +6,8 @@
 #include <ArduinoJson.h>
 #include <DHT_U.h>
 #include <DHT.h>
+#include "WaterPump.h"
+#include "StandaloneControlForWaterPump.h"
 
 #define DHTPIN 4											// DHT pin
 #define PHPIN A0
@@ -44,6 +46,8 @@ bool returnwatered = false;
 bool lighton = true;
 bool wlevelok = true;
 bool watertime = false;
+WaterPump waterPump = WaterPump(pump);
+StandaloneControlForWaterPump standaloneControlForWaterPump = StandaloneControlForWaterPump(waterPump, 43200, 43200);
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -116,7 +120,6 @@ void waterTimer(unsigned long currentWaterMillis, unsigned long wateringInterval
 		}
 	}   // rise watered flag
 }
-
 
 //Lightning default timer
 void lightTimer(unsigned long currentLightMillis, unsigned long lightInterval)

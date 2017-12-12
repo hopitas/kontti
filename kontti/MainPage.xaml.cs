@@ -48,7 +48,7 @@ namespace kontti
             wt1 = new DateTime(2017, 12, 3, 6, 0, 0);
             wt2 = new DateTime(2017, 12, 3, 12, 0, 0);
             wt3 = new DateTime(2017, 12, 3, 18, 0, 0); //18
-            wt4 = new DateTime(2017, 12, 3, 0, 00, 0);
+            wt4 = new DateTime(2017, 12, 3, 0, 0, 0);
 
             //Default timers
             timers = new Timers
@@ -58,7 +58,7 @@ namespace kontti
             };
 
             //Azure connection string, tätä ei sais päästää githubii
-            connectionString = "";
+            connectionString = "HostName=konttihub.azure-devices.net;DeviceId=konttipi2;SharedAccessKey=Oo0sE6jhUY01IIn3PdAt9jfoutDhRvaOdM3F/VvlDhQ=";
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
 
