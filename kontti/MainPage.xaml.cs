@@ -122,7 +122,7 @@ namespace kontti
             {
                 try
                 {
-                    await serialRead(3);
+                    arduinodata = await serialRead(3); //change
                     Debug.WriteLine("Lights on!");
                 }
                 catch (Exception ex)
@@ -137,7 +137,7 @@ namespace kontti
             {
                 try
                 {
-                    await serialRead(4);
+                    arduinodata = await serialRead(4);
                     Debug.WriteLine("Lights off!");
                 }
                 catch (Exception ex)
