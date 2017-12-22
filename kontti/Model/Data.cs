@@ -30,6 +30,5 @@ namespace kontti.Model
     {
         public DateTime Lightson { get; set; }
         public DateTime Lightsoff { get; set; }
-        public int Wateringinterwall { get; set; }
     }
 }

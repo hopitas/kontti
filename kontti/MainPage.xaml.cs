@@ -20,7 +20,6 @@ namespace kontti
         string connectionString;
         private DispatcherTimer sendToCloudTimer;
         private DispatcherTimer arduinoTimer;
-        private DispatcherTimer wateringTimer;
         private int readings = 0;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
@@ -56,8 +55,7 @@ namespace kontti
             timers = new Timers
             {
                 Lightson = new DateTime(2017, 12, 3, 7, 0, 0),
-                Lightsoff = new DateTime(2017, 12, 3, 23, 0, 0),
-                Wateringinterwall = 6
+                Lightsoff = new DateTime(2017, 12, 3, 23, 0, 0)
             };
 
             //Azure connection string, tätä ei sais päästää githubii
@@ -166,7 +164,7 @@ namespace kontti
                 }
             }
 
-            if (arduinodata != null)
+            if (arduinodata != null && !arduinodata.Temperature.Equals(null) && !arduinodata.Humidity.Equals(null))
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
@@ -241,30 +239,7 @@ namespace kontti
             await deviceClient.SendEventAsync(message);
         }
 
-        ////receive data from azure
-        //public async void receiveData(DeviceClient deviceClient)
-        //{
-        //    try
-        //    {
-        //        var receivedMessage = await deviceClient.ReceiveAsync();
-
-        //        if (receivedMessage != null)
-        //        {
-        //            var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
-        //            deviceClient.CompleteAsync(receivedMessage);
-        //            Debug.WriteLine(messageData);
-        //        }
-        //        else
-        //        {
-
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Debug.WriteLine("Exception when receiving message:" + e.Message);
-        //    }
-        //}
-
+        //Receive from Azure
         private static async void ReceiveC2dAsync(DeviceClient deviceClient)
         {
             while (true)
