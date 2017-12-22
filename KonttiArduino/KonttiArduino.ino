@@ -194,26 +194,32 @@ void serialEvent()
 			json["temperature"] = t1;
 			json["humidity"] = h1;
 	//		json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
-			json["wlevelok"] = wlevelok;
+	//		json["wlevelok"] = wlevelok;
 	//		json["lighton"] = lighton;					// Tells if light is on or off					
 			json.printTo(Serial);
 			// reset pulsetimer
 			previousMaxintervalMillis = currentMillis;
 			break;
 		case 2:
+			json["temperature"] = t1;
+			json["humidity"] = h1;
 			//set watering time flag
 			json["Watered"] = true;
-			//json["wlevelok"] = wlevelok;
+			json["wlevelok"] = wlevelok;
 			json.printTo(Serial);
 			watertime = true;
 			break;
 		case 3:
+			json["temperature"] = t1;
+			json["humidity"] = h1;
 			//lights on
 			json["Lightson"] = true;
 			json.printTo(Serial);
 			lightSwitch(true);
 			break;
 		case 4:
+			json["temperature"] = t1;
+			json["humidity"] = h1;
 			//lights off
 			json["Lightson"] = false;
 			json.printTo(Serial);

@@ -21,27 +21,30 @@ namespace kontti
         private DispatcherTimer sendToCloudTimer;
         private DispatcherTimer arduinoTimer;
         private DispatcherTimer wateringTimer;
-        bool lightonTemp = false;
         private int readings = 0;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
         DataWriter dataWriterObject = null;
-        private Data envdata;
+        private SendData envdata;
         private Timers timers;
         private byte[] WriteBuf = new byte[1];
         DateTime wt1, wt2, wt3, wt4;
         bool Wateredtemp = false;
+        bool lightonTemp = false;
+        bool lightoffTemp = false;
 
         public MainPage()
         {
 
             this.InitializeComponent();
 
-            envdata = new Data
+            envdata = new SendData
             {
                 displayname = "KonttiRaspi",
                 organization = "T&T",
-                timecreated = DateTime.Now.ToLocalTime()
+                timecreated = DateTime.Now.ToLocalTime(),
+                Watered = false,
+                Lighton = true
             };
 
             wt1 = new DateTime(2017, 12, 3, 6, 0, 0);
@@ -90,7 +93,7 @@ namespace kontti
         //Communicates with Arduino
         private async void arduinoTimer_TickAsync(object sender, object e)
         {
-            ArduinoData arduinodata = new ArduinoData();
+            MeasurementData arduinodata = new MeasurementData();
 
             //watering
             if ((wt1.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && wt1.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours) && Wateredtemp == false)
@@ -104,8 +107,9 @@ namespace kontti
             {
                 try
                 {
-                    await serialRead(2);
+                    arduinodata = await serialRead(2);
                     Debug.WriteLine("Watering");
+                    envdata.Wleveok = arduinodata.Wlevelok;
                     Wateredtemp = true;
 
                 }
@@ -116,14 +120,14 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-
             // lightson timer
-            if ((timers.Lightson.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightson.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && envdata.Lighton == false)
+            else if ((timers.Lightson.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightson.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && lightonTemp == false)
             {
                 try
                 {
                     arduinodata = await serialRead(3); //change
                     Debug.WriteLine("Lights on!");
+                    lightonTemp = true;
                 }
                 catch (Exception ex)
                 {
@@ -133,12 +137,13 @@ namespace kontti
                 }
             }
             //lights off timer
-            if ((timers.Lightsoff.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightsoff.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && envdata.Lighton == true)
+            else if ((timers.Lightsoff.TimeOfDay.Minutes.Equals(DateTime.Now.TimeOfDay.Minutes) && timers.Lightsoff.TimeOfDay.Hours.Equals(DateTime.Now.TimeOfDay.Hours)) && lightoffTemp == false)
             {
                 try
                 {
                     arduinodata = await serialRead(4);
                     Debug.WriteLine("Lights off!");
+                    lightoffTemp = true;
                 }
                 catch (Exception ex)
                 {
@@ -147,44 +152,47 @@ namespace kontti
                     ListAvailablePorts();
                 }
             }
-
-            try
+            else
             {
-                arduinodata = await serialRead(1);
+                try
+                {
+                    arduinodata = await serialRead(1);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debug.WriteLine("Could not get data from Arduino");
+                    ListAvailablePorts();
+                }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                Debug.WriteLine("Could not get data from Arduino");
-                ListAvailablePorts();
-            }
-
 
             if (arduinodata != null)
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
-                if (arduinodata.Wlevelok == false)
-                {
-                    envdata.Wleveok = arduinodata.Wlevelok;
-                }
                 readings++;
+            }
+            if (lightonTemp == true)
+            {
+                envdata.Lighton = true;
+                envdata.LightSwitchTime = DateTime.Now;
+                lightonTemp = false;
+            }
 
-                if (arduinodata.Lighton != lightonTemp)
-                {
-                    envdata.Lighton = arduinodata.Lighton;
-                    envdata.LightSwitchTime = DateTime.Now;
-                    lightonTemp = arduinodata.Lighton;
-                }
+            if (lightoffTemp == true)
+            {
+                envdata.Lighton = false;
+                envdata.LightSwitchTime = DateTime.Now;
+                lightoffTemp = false;
+            }
 
-                if (Wateredtemp == true)
-                {
-                    envdata.WateredTime = DateTime.Now;
-                    envdata.Watered = true; //Sends azure if watered in this 10min cycle
-                                            //  envdata.Wleveok = arduinodata.Wlevelok; // tells if higher o lower water sensor stopped watering last time, if lower, wlevel too low
-                    arduinodata.Watered = false;
-                    Wateredtemp = false;
-                }
+            if (Wateredtemp == true)
+            {
+                envdata.WateredTime = DateTime.Now;
+                envdata.Watered = true; //Sends azure if watered in this 10min cycle                      
+                envdata.Wleveok = arduinodata.Wlevelok;
+                arduinodata.Watered = false;
+                Wateredtemp = false;
             }
         }
 
@@ -207,12 +215,9 @@ namespace kontti
 
             //set the default values
             envdata.Watered = false;
-            envdata.Wleveok = true;
-
-            //   receiveData(deviceClient);
         }
 
-        private string convertData(Data data)
+        private string convertData(SendData data)
         {
             string jsonString = "";
             try
@@ -272,15 +277,12 @@ namespace kontti
         }
 
 
-        private async Task<ArduinoData> serialRead(byte caseArduino)
+        private async Task<MeasurementData> serialRead(byte caseArduino)
         {
 
             dataReaderObject = new DataReader(serialPort.InputStream);
             dataWriterObject = new DataWriter(serialPort.OutputStream);
-            ArduinoData data = new ArduinoData();
-            WateredData wdata = new WateredData();
-            LightsData ldata = new LightsData();
-
+            MeasurementData data = new MeasurementData();
 
             try
             {
@@ -313,7 +315,7 @@ namespace kontti
                 {
                     await dataReaderObject.LoadAsync(256);
                     var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    data = JsonConvert.DeserializeObject<ArduinoData>(receivedStrings);
+                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
                     Debug.WriteLine(receivedStrings.Trim());
                 }
                 catch (Exception ex)
@@ -337,9 +339,8 @@ namespace kontti
                 {
                     await dataReaderObject.LoadAsync(256);
                     var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    wdata = JsonConvert.DeserializeObject<WateredData>(receivedStrings);
+                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
                     Debug.WriteLine(receivedStrings.Trim());
-                    data.Watered = wdata.Watered;
                     //  data.Wlevelok = wdata.Wlevelok;
                 }
                 catch (Exception ex)
@@ -363,9 +364,8 @@ namespace kontti
                 {
                     await dataReaderObject.LoadAsync(256);
                     var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    ldata = JsonConvert.DeserializeObject<LightsData>(receivedStrings);
+                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
                     Debug.WriteLine(receivedStrings.Trim());
-                    data.Lighton = ldata.Lighton;
                 }
                 catch (Exception ex)
                 {
@@ -388,10 +388,8 @@ namespace kontti
                 {
                     await dataReaderObject.LoadAsync(256);
                     var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    ldata = JsonConvert.DeserializeObject<LightsData>(receivedStrings);
+                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
                     Debug.WriteLine(receivedStrings.Trim());
-
-                    data.Lighton = ldata.Lighton;
                 }
                 catch (Exception ex)
                 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace kontti.Model
 {
-    class Data
+    class SendData
     {
         public string displayname { get; set; }
         public string organization { get; set; }
@@ -17,22 +17,12 @@ namespace kontti.Model
         public DateTime WateredTime { get; set; }
     }
 
-    class ArduinoData
+    class MeasurementData
     {
         public double Temperature { get; set; }
         public double Humidity { get; set; }
         public bool Watered { get; set; }
         public bool Wlevelok { get; set; }
-        public bool Lighton { get; set; }
-    }
-
-    class WateredData
-    {
-        public bool Watered { get; set; }
-    }
-
-    class LightsData
-    {
         public bool Lighton { get; set; }
     }
 
