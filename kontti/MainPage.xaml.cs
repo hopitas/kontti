@@ -107,9 +107,7 @@ namespace kontti
                 {
                     arduinodata = await serialRead(2);
                     Debug.WriteLine("Watering");
-                    envdata.Wleveok = arduinodata.Wlevelok;
                     Wateredtemp = true;
-
                 }
                 catch (Exception ex)
                 {
@@ -164,7 +162,7 @@ namespace kontti
                 }
             }
 
-            if (arduinodata != null && !arduinodata.Temperature.Equals(null) && !arduinodata.Humidity.Equals(null))
+            if (arduinodata != null && arduinodata.Temperature != 0 && arduinodata.Humidity != 0)
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
@@ -176,20 +174,18 @@ namespace kontti
                 envdata.LightSwitchTime = DateTime.Now;
                 lightonTemp = false;
             }
-
             if (lightoffTemp == true)
             {
                 envdata.Lighton = false;
                 envdata.LightSwitchTime = DateTime.Now;
                 lightoffTemp = false;
             }
-
             if (Wateredtemp == true)
             {
                 envdata.WateredTime = DateTime.Now;
                 envdata.Watered = true; //Sends azure if watered in this 10min cycle                      
                 envdata.Wleveok = arduinodata.Wlevelok;
-                arduinodata.Watered = false;
+              //  arduinodata.Watered = false;
                 Wateredtemp = false;
             }
         }
@@ -251,7 +247,6 @@ namespace kontti
             }
         }
 
-
         private async Task<MeasurementData> serialRead(byte caseArduino)
         {
 
@@ -284,8 +279,6 @@ namespace kontti
                 Debug.WriteLine("Could not write to Arduino");
             }
 
-            if (caseArduino == 1)
-            {
                 try
                 {
                     await dataReaderObject.LoadAsync(256);
@@ -306,80 +299,6 @@ namespace kontti
                         dataReaderObject = null;
                     }
                 }
-            }
-
-            if (caseArduino == 2)
-            {
-                try
-                {
-                    await dataReaderObject.LoadAsync(256);
-                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
-                    Debug.WriteLine(receivedStrings.Trim());
-                    //  data.Wlevelok = wdata.Wlevelok;
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                    ListAvailablePorts();
-                }
-                finally
-                {
-                    if (dataReaderObject != null)
-                    {
-                        dataReaderObject.DetachStream();
-                        dataReaderObject = null;
-                    }
-                }
-            }
-
-            if (caseArduino == 3)
-            {
-                try
-                {
-                    await dataReaderObject.LoadAsync(256);
-                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
-                    Debug.WriteLine(receivedStrings.Trim());
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                    ListAvailablePorts();
-                }
-                finally
-                {
-                    if (dataReaderObject != null)
-                    {
-                        dataReaderObject.DetachStream();
-                        dataReaderObject = null;
-                    }
-                }
-            }
-
-            if (caseArduino == 4)
-            {
-                try
-                {
-                    await dataReaderObject.LoadAsync(256);
-                    var receivedStrings = dataReaderObject.ReadString(dataReaderObject.UnconsumedBufferLength).Trim();
-                    data = JsonConvert.DeserializeObject<MeasurementData>(receivedStrings);
-                    Debug.WriteLine(receivedStrings.Trim());
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                    ListAvailablePorts();
-                }
-                finally
-                {
-                    if (dataReaderObject != null)
-                    {
-                        dataReaderObject.DetachStream();
-                        dataReaderObject = null;
-                    }
-                }
-            }
 
             return data;
         }
