@@ -9,4 +9,7 @@ More info coming soon :)
 
 Link to parts/BOM: https://docs.google.com/spreadsheets/d/16tMDMJUsUy5nxVDzXvrtVnpPqeh5zw7_K8VPztKyi30/edit?usp=sharing
 
+PowerBI data: https://app.powerbi.com/view?r=eyJrIjoiMmY4OTUwNjEtYWJhMi00YmViLTg1NDAtMjgyN2IwNzUxOWM2IiwidCI6ImFjNjVlMjBiLTFhY2QtNGM2YS1hODlkLWQ4ZDcwZDFjZTVhZCIsImMiOjh9
+
+
 hopey :)
