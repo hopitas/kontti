@@ -20,7 +20,6 @@ namespace kontti
         string connectionString;
         private DispatcherTimer sendToCloudTimer;
         private DispatcherTimer arduinoTimer;
-        private int readings = 0;
         private SerialDevice serialPort = null;
         DataReader dataReaderObject = null;
         DataWriter dataWriterObject = null;
@@ -166,7 +165,8 @@ namespace kontti
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
-                readings++;
+                envdata.Temperature = envdata.Temperature / 2;
+                envdata.Humidity = envdata.Humidity / 2;
             }
             if (lightonTemp == true)
             {
@@ -196,9 +196,6 @@ namespace kontti
             //data.Temperature = random.NextDouble(); //arduinodata.Temperature;
             //data.Humidity = random.NextDouble();//arduinodata.Humidity;
 
-            envdata.Temperature = envdata.Temperature / readings;
-            envdata.Humidity = envdata.Humidity / readings;
-            readings = 0;
             envdata.timecreated = DateTime.Now;
 
             DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp);
