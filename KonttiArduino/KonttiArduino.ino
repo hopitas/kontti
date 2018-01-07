@@ -8,6 +8,7 @@
 #include <DHT.h>
 
 #define DHTPIN 4											// DHT pin
+#define PHPIN A0
 #define DHTTYPE DHT22										// DHT 22  (AM2302)
 DHT dht(DHTPIN, DHTTYPE);									// Initialize DHT sensor for normal 16mhz Arduino
 
@@ -32,6 +33,7 @@ unsigned long maxinterval = 3600000; // if we don't get message from Rpi in maxi
 unsigned long defaultdhtreadinginterval = 2000;						// Read temperature and humidity readings every 2 seconds.
 float t1 = 0;
 float h1 = 0;
+float p1 = 0;
 unsigned long previousDHTMillis = 0;
 unsigned long defaultlightinterval;
 unsigned long currentMillis;
@@ -62,7 +64,7 @@ void setup() {
 // the loop function runs over and over again until power down or reset
 void loop() {
 	currentMillis = millis();
-	readDHT(currentMillis, defaultdhtreadinginterval);
+	readsensors(currentMillis, defaultdhtreadinginterval);
 	if (watertime == true)
 	{
 	 watering(currentMillis, wateringStartTime); // if we get watertime from rpi, it is true until watering is false.
@@ -88,11 +90,12 @@ void pulseTimer(unsigned long currentPulseMillis, unsigned long maxpulseinterval
 }
 
 // Read temperature and humidity
-void readDHT(unsigned long currentDHTMillis, unsigned long dhtreadinginterval) {
+void readsensors(unsigned long currentDHTMillis, unsigned long dhtreadinginterval) {
 
 	if (currentDHTMillis - previousDHTMillis >= dhtreadinginterval) {
 		h1 = dht.readHumidity();
 		t1 = dht.readTemperature();
+		p1 = readPH();
 		previousDHTMillis = currentDHTMillis;
 	}
 }
@@ -134,6 +137,15 @@ void lightTimer(unsigned long currentLightMillis, unsigned long lightInterval)
 		lightSwitch(defaultlightswitch); //switch lights
 		previousLightMillis = currentLightMillis;
 	}
+}
+
+float readPH()
+{
+	int measure = analogRead(PHPIN);
+	double voltage = 5 / 1024.0 * measure; //classic digital to voltage conversion
+	float Po = 7 + ((2.5 - voltage) / 0.18);
+
+	return Po;
 }
 
 bool watering(unsigned long currentMillis, unsigned long wateringStartTime)
@@ -193,6 +205,7 @@ void serialEvent()
 		case 1:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
+			json["ph"] = p1;
 	//		json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
 	//		json["wlevelok"] = wlevelok;
 	//		json["lighton"] = lighton;					// Tells if light is on or off					
@@ -203,6 +216,7 @@ void serialEvent()
 		case 2:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
+			json["ph"] = p1;
 			//set watering time flag
 			json["Watered"] = true;
 			json["wlevelok"] = wlevelok;
@@ -212,6 +226,7 @@ void serialEvent()
 		case 3:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
+			json["ph"] = p1;
 			//lights on
 			json["Lightson"] = true;
 			json.printTo(Serial);
@@ -220,6 +235,7 @@ void serialEvent()
 		case 4:
 			json["temperature"] = t1;
 			json["humidity"] = h1;
+			json["ph"] = p1;
 			//lights off
 			json["Lightson"] = false;
 			json.printTo(Serial);

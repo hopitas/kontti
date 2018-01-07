@@ -10,6 +10,7 @@ namespace kontti.Model
         public DateTime timecreated { get; set; }
         public double Temperature { get; set; }
         public double Humidity { get; set; }
+        public double Ph { get; set; }
         public bool Lighton { get; set; }
         public bool Watered { get; set; }
         public bool Wleveok { get; set; }
@@ -21,6 +22,7 @@ namespace kontti.Model
     {
         public double Temperature { get; set; }
         public double Humidity { get; set; }
+        public double Ph { get; set; }
         public bool Watered { get; set; }
         public bool Wlevelok { get; set; }
         public bool Lighton { get; set; }

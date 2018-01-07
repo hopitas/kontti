@@ -19,6 +19,7 @@
     <None Include="WaterLevel.ino" />
     <None Include="Pump.ino" />
     <None Include="Valve.ino" />
+    <None Include="phtest\phtest.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.ArduinoTests.vsarduino.h">

@@ -165,8 +165,10 @@ namespace kontti
             {
                 envdata.Temperature += Math.Round(arduinodata.Temperature, 2);
                 envdata.Humidity += Math.Round(arduinodata.Humidity, 2);
+                envdata.Ph += Math.Round(arduinodata.Ph, 2);
                 envdata.Temperature = envdata.Temperature / 2;
                 envdata.Humidity = envdata.Humidity / 2;
+                envdata.Ph = envdata.Ph / 2;
             }
             if (lightonTemp == true)
             {
