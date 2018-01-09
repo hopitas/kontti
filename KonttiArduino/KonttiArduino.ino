@@ -7,6 +7,7 @@
 #include <DHT_U.h>
 #include <DHT.h>
 #include "WaterPump.h"
+#include "WaterLevelSensor.h"
 #include "StandaloneControlForWaterPump.h"
 
 #define DHTPIN 4											// DHT pin
@@ -47,7 +48,13 @@ bool lighton = true;
 bool wlevelok = true;
 bool watertime = false;
 WaterPump waterPump = WaterPump(pump);
-StandaloneControlForWaterPump standaloneControlForWaterPump = StandaloneControlForWaterPump(waterPump, 43200, 43200);
+WaterLevelSensor waterLowerSensor = WaterLevelSensor(wLevelEmpty);
+WaterLevelSensor waterHigherSensor = WaterLevelSensor(wLevelLimit);
+int waterCycleDuration = 3600 * 8; // bigger than when directed by RasPi to avoid conflict
+int waterOnDuration = 60 * 10;
+
+StandaloneControlForWaterPump standaloneControlForWaterPump =
+	StandaloneControlForWaterPump(&waterPump, &waterLowerSensor, &waterHigherSensor, waterCycleDuration, waterOnDuration);
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -68,6 +75,7 @@ void setup() {
 // the loop function runs over and over again until power down or reset
 void loop() {
 	currentMillis = millis();
+	standaloneControlForWaterPump.cycle(currentMillis);
 	readsensors(currentMillis, defaultdhtreadinginterval);
 	if (watertime == true)
 	{
@@ -221,7 +229,8 @@ void serialEvent()
 			json["humidity"] = h1;
 			json["ph"] = p1;
 			//set watering time flag
-			json["Watered"] = true;
+			standaloneControlForWaterPump.pleaseStartNow(currentMillis);
+			json["Watered"] = waterPump.pumpIsOn;
 			json["wlevelok"] = wlevelok;
 			json.printTo(Serial);
 			watertime = true;

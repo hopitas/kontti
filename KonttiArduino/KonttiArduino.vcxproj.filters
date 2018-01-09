@@ -30,6 +30,9 @@
     <ClInclude Include="WaterPump.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WaterLevelSensor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LightSwitch.cpp">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WaterPump.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterLevelSensor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

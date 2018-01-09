@@ -1,46 +1,53 @@
 
 #include "StandaloneControlForWaterPump.h"
 
-class StandaloneControlForWaterPump
+bool StandaloneControlForWaterPump::shouldStartPump(timeInMilliseconds currentTime)
 {
-private:
-	WaterPump waterPump;
-	timeInMilliseconds offDuration;
-	timeInMilliseconds onDuration;
+	return
+		waterLowSensor->HasWater() &&
+		!waterHighSensor->HasWater() &&
+		isTimeToStartPump(currentTime);
+}
 
-	bool shouldStartPump(timeInMilliseconds currentTime)
-	{
-		return currentTime > waterPump.lastEndTime + offDuration;
-	}
+bool StandaloneControlForWaterPump::isTimeToStartPump(timeInMilliseconds currentTime)
+{
+	return waterPump->lastStartTime == 0 ||
+		currentTime > waterPump->lastStartTime + cycleDuration - onDuration;
+}
 
-	bool shouldStopPump(timeInMilliseconds currentTime)
-	{
-		return currentTime > waterPump.lastStartTime + onDuration;
-	}
+bool StandaloneControlForWaterPump::shouldStopPump(timeInMilliseconds currentTime)
+{
+	return !waterLowSensor->HasWater() ||
+		waterHighSensor->HasWater() ||
+		isTimeToStopPump(currentTime);
+}
 
-public:
-	StandaloneControlForWaterPump(WaterPump waterPump, timeInMilliseconds offDuration, timeInMilliseconds onDuration)
-	{
-		this->waterPump = waterPump;
-		this->offDuration = offDuration;
-		this->onDuration = onDuration;
-	};
+bool StandaloneControlForWaterPump::isTimeToStopPump(timeInMilliseconds currentTime)
+{
+	return currentTime > waterPump->lastStartTime + onDuration;
+}
 
-	void cycle(timeInMilliseconds currentTime)
+
+void StandaloneControlForWaterPump::cycle(timeInMilliseconds currentTime)
+{
+	if (waterPump->pumpIsOn)
 	{
-		if (waterPump.pumpIsOn)
+		if (shouldStopPump(currentTime))
 		{
-			if (shouldStopPump(currentTime))
-			{
-				waterPump.stop(currentTime);
-			}
-		}
-		else
-		{
-			if (shouldStartPump(currentTime))
-			{
-				waterPump.start(currentTime);
-			}
+			waterPump->stop(currentTime);
 		}
 	}
-};
+	else
+	{
+		if (shouldStartPump(currentTime))
+		{
+			waterPump->start(currentTime);
+		}
+	}
+}
+
+void StandaloneControlForWaterPump::pleaseStartNow(timeInMilliseconds currentTime)
+{
+	waterPump->lastStartTime = currentTime - cycleDuration - 1;
+	cycle(currentTime);
+}

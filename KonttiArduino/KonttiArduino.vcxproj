@@ -47,7 +47,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\KonttiArduino;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries\ArduinoJson\src;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries\DHT_sensor_library;$(ProjectDir)..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\Extensions\pbd1usl1.2ll\Micro Platforms\visualmicro\ide\libraries;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\libraries;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\cores\arduino;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\variants\standard;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\avr\include\;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\avr\include\avr\;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.8.1\include;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\KonttiArduino;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries\ArduinoJson\src;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries\DHT_sensor_library;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries\Adafruit_Sensor-master;$(ProjectDir)..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\Extensions\pbd1usl1.2ll\Micro Platforms\visualmicro\ide\libraries;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\libraries;$(ProjectDir)..\..\..\..\Documents\Arduino\libraries;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\cores\arduino;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.20\variants\standard;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\avr\include\;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\avr\include\avr\;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.8.1\include;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\tools\avr-gcc\4.9.2-atmel3.5.4-arduino2\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.KonttiArduino.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=10801;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -84,12 +84,14 @@
   <ItemGroup>
     <ClInclude Include="LightSwitch.h" />
     <ClInclude Include="StandaloneControlForWaterPump.h" />
+    <ClInclude Include="WaterLevelSensor.h" />
     <ClInclude Include="WaterPump.h" />
     <ClInclude Include="__vm\.KonttiArduino.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LightSwitch.cpp" />
     <ClCompile Include="StandaloneControlForWaterPump.cpp" />
+    <ClCompile Include="WaterLevelSensor.cpp" />
     <ClCompile Include="WaterPump.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
