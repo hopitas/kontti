@@ -81,5 +81,6 @@ typedef void *__builtin_va_list;
 #include "Pump.ino"
 #include "Valve.ino"
 #include "WaterLevel.ino"
+#include "phtest\phtest.ino"
 #endif
 #endif
