@@ -13,6 +13,15 @@
 
 typedef unsigned long timeInMilliseconds;
 
+enum WaterPumpStopReason
+{
+	UNDEFINED,
+	LOWER_CONTAINER_EMPTY,
+	UPPER_CONTAINER_FULL,
+	TIMEOUT,
+	CONTINUE
+};
+
 class StandaloneControlForWaterPump
 {
 public:
@@ -27,11 +36,13 @@ public:
 
 	bool shouldStartPump(timeInMilliseconds currentTime);
 
-	bool shouldStopPump(timeInMilliseconds currentTime);
+	WaterPumpStopReason shouldStopPump(timeInMilliseconds currentTime);
 
 	void cycle(timeInMilliseconds currentTime);
 
 	void pleaseStartNow(timeInMilliseconds currentTime);
+
+	WaterPumpStopReason lastStopReason = UNDEFINED;
 
 private:
 	WaterPump *waterPump;

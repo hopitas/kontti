@@ -15,11 +15,12 @@ bool StandaloneControlForWaterPump::isTimeToStartPump(timeInMilliseconds current
 		currentTime > waterPump->lastStartTime + cycleDuration - onDuration;
 }
 
-bool StandaloneControlForWaterPump::shouldStopPump(timeInMilliseconds currentTime)
+WaterPumpStopReason StandaloneControlForWaterPump::shouldStopPump(timeInMilliseconds currentTime)
 {
-	return !waterLowSensor->HasWater() ||
-		waterHighSensor->HasWater() ||
-		isTimeToStopPump(currentTime);
+	return !waterLowSensor->HasWater() ? LOWER_CONTAINER_EMPTY :
+		waterHighSensor->HasWater() ? UPPER_CONTAINER_FULL :
+		isTimeToStopPump(currentTime) ? TIMEOUT :
+		CONTINUE;
 }
 
 bool StandaloneControlForWaterPump::isTimeToStopPump(timeInMilliseconds currentTime)
@@ -32,8 +33,10 @@ void StandaloneControlForWaterPump::cycle(timeInMilliseconds currentTime)
 {
 	if (waterPump->pumpIsOn)
 	{
-		if (shouldStopPump(currentTime))
+		WaterPumpStopReason whyShouldStop = shouldStopPump(currentTime);
+		if (whyShouldStop != CONTINUE)
 		{
+			lastStopReason = whyShouldStop;
 			waterPump->stop(currentTime);
 		}
 	}

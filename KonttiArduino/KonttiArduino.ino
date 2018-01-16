@@ -50,8 +50,8 @@ bool watertime = false;
 WaterPump waterPump = WaterPump(pump);
 WaterLevelSensor waterLowerSensor = WaterLevelSensor(wLevelEmpty);
 WaterLevelSensor waterHigherSensor = WaterLevelSensor(wLevelLimit);
-int waterCycleDuration = 3600 * 8; // bigger than when directed by RasPi to avoid conflict
-int waterOnDuration = 60 * 10;
+timeInMilliseconds waterCycleDuration = 3600L * 8L * 1000L; // bigger than when directed by RasPi to avoid conflict
+timeInMilliseconds waterOnDuration = 60L * 10L * 1000L;
 
 StandaloneControlForWaterPump standaloneControlForWaterPump =
 	StandaloneControlForWaterPump(&waterPump, &waterLowerSensor, &waterHigherSensor, waterCycleDuration, waterOnDuration);
@@ -72,21 +72,36 @@ void setup() {
 	defaultlightinterval = defaultlighton;					// start with lights on 16h
 }
 
+timeInMilliseconds lastReportMillis = 0L;
+bool lastReportPumpState = false;
+char report[250];
+
 // the loop function runs over and over again until power down or reset
 void loop() {
 	currentMillis = millis();
 	standaloneControlForWaterPump.cycle(currentMillis);
 	readsensors(currentMillis, defaultdhtreadinginterval);
-	if (watertime == true)
-	{
-	 watering(currentMillis, wateringStartTime); // if we get watertime from rpi, it is true until watering is false.
-	}
-	else
-	{
-		wateringStartTime = currentMillis;
-	}
+
 	//We start arduino default cycles only if there is no pulse in 1h from rpi
 	pulseTimer(currentMillis, maxinterval);
+
+  if (lastReportMillis + 1000 < currentMillis || (lastReportPumpState != waterPump.pumpIsOn))
+  {
+    lastReportMillis = currentMillis;
+    lastReportPumpState = waterPump.pumpIsOn;
+    snprintf(
+		report,
+		250,
+		"{now: %lu, started: %lu, on: %d, reason: %d, hasWater: %d, overflow: %d}",
+		currentMillis,
+		waterPump.lastStartTime,
+		waterPump.pumpIsOn ? 1 : 0,
+		standaloneControlForWaterPump.lastStopReason + 1000,
+		waterLowerSensor.HasWater() ? 1 : 0,
+		waterHigherSensor.HasWater() ? 1 : 0
+    );
+  	Serial.println(report);
+  }
 }
 
 void pulseTimer(unsigned long currentPulseMillis, unsigned long maxpulseinterval)
@@ -211,54 +226,44 @@ void serialEvent()
 	{
 		number = Serial.read();
 
+		json["temperature"] = t1;
+		json["humidity"] = h1;
+		json["ph"] = p1;
+		json["lastWaterPumpStopReason"] = standaloneControlForWaterPump.lastStopReason;
+		json["Watered"] = waterPump.pumpIsOn;
+		json["wlevelok"] = wlevelok;
+
+
 		switch (number)
 		{
 		case 1:
-			json["temperature"] = t1;
-			json["humidity"] = h1;
-			json["ph"] = p1;
-	//		json["watered"] = returnwatered;					// If watered between serial events, send true to Rpi and then set watered flag false
-	//		json["wlevelok"] = wlevelok;
-	//		json["lighton"] = lighton;					// Tells if light is on or off					
-			json.printTo(Serial);
 			// reset pulsetimer
 			previousMaxintervalMillis = currentMillis;
 			break;
 		case 2:
-			json["temperature"] = t1;
-			json["humidity"] = h1;
-			json["ph"] = p1;
 			//set watering time flag
 			standaloneControlForWaterPump.pleaseStartNow(currentMillis);
-			json["Watered"] = waterPump.pumpIsOn;
-			json["wlevelok"] = wlevelok;
-			json.printTo(Serial);
 			watertime = true;
 			break;
 		case 3:
-			json["temperature"] = t1;
-			json["humidity"] = h1;
-			json["ph"] = p1;
 			//lights on
 			json["Lightson"] = true;
-			json.printTo(Serial);
 			lightSwitch(true);
 			break;
 		case 4:
-			json["temperature"] = t1;
-			json["humidity"] = h1;
-			json["ph"] = p1;
 			//lights off
 			json["Lightson"] = false;
-			json.printTo(Serial);
 			lightSwitch(false);
 			break;
 		case 5:
 			//cooling??
 			break;
 		default:
+			json["error"] = "Invalid request number";
 			//Serial.println("No valid number");
 			break;
 		}
+		json.printTo(Serial);
+		json.remove("error"); // reported, now continue as normal
 	}
 }
